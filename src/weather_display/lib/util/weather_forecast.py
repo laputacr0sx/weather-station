@@ -1,7 +1,10 @@
+import requests
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
 from typing import Optional, List
+
+from weather_display import HKO_URL
 
 
 class Unit(Enum):
@@ -97,6 +100,13 @@ def parse_weather_forecast(json_data: dict) -> WeatherForecastData:
     )
 
     return weather_forecast_data
+
+
+def get_weather_forecast():
+    params = {"dataType": "fnd", "lang": "tc"}
+    forecast_json = requests.get(HKO_URL, params=params).json()
+
+    return parse_weather_forecast(forecast_json)
 
 
 # Example JSON data (replace with actual JSON response)

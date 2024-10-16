@@ -104,19 +104,19 @@ def render_rainfall_chart():
     # plt.tight_layout()
 
     # Save the plot as a PNG file
-    plt.savefig(
-        "rainfall.png",
-        format="png",
-        bbox_inches="tight",
-        dpi=300,
-    )
+    # plt.savefig(
+    #     "rainfall.png",
+    #     format="png",
+    #     bbox_inches="tight",
+    #     dpi=300,
+    # )
 
     buf = io.BytesIO()
     plt.savefig(buf, format="png", bbox_inches="tight", dpi=300)
 
     # Convert the PNG file to BMP format with 1-bit color
-    with Image.open("rainfall.png") as img:
-        img.convert("1").save("rainfall.bmp", format="bmp")
+    # with Image.open("rainfall.png") as img:
+    #     img.convert("1").save("rainfall.bmp", format="bmp")
 
     plt.close()
     buf.seek(0)

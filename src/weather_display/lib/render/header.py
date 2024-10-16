@@ -3,6 +3,7 @@ import os
 from PIL import Image, ImageDraw
 from weather_display import PIC_DIR
 from weather_display.lib.util.current_weather import CurrentWeather
+from weather_display.lib.util.humidity import HumidityData
 
 from ...assest.font.cubic_font import font32, font48, font24, font64
 
@@ -13,6 +14,7 @@ from ...assest.font.cubic_font import font32, font48, font24, font64
 
 def render_header_section(
     weather: CurrentWeather,
+    humidity: HumidityData,
     location: str,
     now: str,
     draw: ImageDraw.ImageDraw,
@@ -27,7 +29,7 @@ def render_header_section(
     draw.text((278, 2), f"{weather.temperature.data[0].value} C", font=font64, fill=0)
     draw.text((358, 2), "o", font=font24, fill=0)
     # Render humidity
-    draw.text((278, 72), f"{weather.humidity.data[0].value}%", font=font32, fill=0)
+    draw.text((278, 72), f"{humidity.humidity}%", font=font32, fill=0)
 
     location_length = len(location)
     current_date_length = len(now)

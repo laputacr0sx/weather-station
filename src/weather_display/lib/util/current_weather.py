@@ -1,7 +1,10 @@
+import requests
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
 from typing import List
+
+from weather_display import HKO_URL
 
 
 class PurpleUnit(Enum):
@@ -150,6 +153,13 @@ def parse_current_weather(json_data: dict) -> CurrentWeather:
     )
 
     return current_weather
+
+
+def get_current_weather():
+    params = {"dataType": "rhrread", "lang": "tc"}
+    current_json = requests.get(HKO_URL, params=params).json()
+
+    return parse_current_weather(current_json)
 
 
 # Example JSON data (replace with actual JSON response)
