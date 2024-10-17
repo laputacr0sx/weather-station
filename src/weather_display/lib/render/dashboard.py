@@ -6,6 +6,7 @@ from weather_display.assest.font.cubic_font import font12, font18, font32
 from weather_display.lib.util.current_weather import CurrentWeather
 from weather_display.lib.util.env_sensor import EnvironmentData
 from weather_display.lib.util.hourly_rainfall import get_hourly_rainfall
+from weather_display.lib.util.sun import SunStatus
 from weather_display.lib.util.uv_index import UVIndex
 from weather_display.lib.util.wind import WindData
 
@@ -15,6 +16,7 @@ def render_minor_dashboard(
     wind: WindData,
     uv: UVIndex,
     weather: CurrentWeather,
+    sun: SunStatus,
     draw: ImageDraw.ImageDraw,
     image: Image.Image,
 ):
@@ -23,7 +25,7 @@ def render_minor_dashboard(
             {
                 "icon_uri": "sunrise.png",
                 "name": "日出時間",
-                "data": "05:59",
+                "data": sun.rise,
                 "unit": None,
             },
             {
@@ -50,7 +52,7 @@ def render_minor_dashboard(
             {
                 "icon_uri": "sunset.png",
                 "name": "日落時間",
-                "data": "18:02",
+                "data": sun.set,
                 "unit": None,
             },
             # {
@@ -68,8 +70,8 @@ def render_minor_dashboard(
             {
                 "icon_uri": "barometer.png",
                 "name": "室內氣壓",
-                "data": env.pressure,
-                "unit": "in",
+                "data": f"{env.pressure/1000:.2f}",
+                "unit": "bar",
             },
             {
                 "icon_uri": "humidity.png",
