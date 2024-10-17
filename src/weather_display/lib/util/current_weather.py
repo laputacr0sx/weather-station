@@ -112,7 +112,9 @@ def parse_current_weather(json_data: dict) -> CurrentWeather:
     # Parse temperature data
     temperature_data = [
         HumidityDatum(
-            unit=PurpleUnit(datum["unit"]), value=datum["value"], place=datum["place"]
+            unit=PurpleUnit(datum["unit"]),
+            value=datum["value"] or 0,
+            place=datum["place"],
         )
         for datum in json_data["temperature"]["data"]
     ]
