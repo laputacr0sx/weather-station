@@ -2,7 +2,7 @@ import os
 
 from PIL import Image, ImageDraw
 from weather_display import PIC_DIR
-from weather_display.assest.font.cubic_font import font12, font18, font32
+from weather_display.assest.font.cubic_font import font12, font14, font32
 from weather_display.lib.util.current_weather import CurrentWeather
 from weather_display.lib.util.env_sensor import EnvironmentData
 from weather_display.lib.util.hourly_rainfall import get_hourly_rainfall
@@ -105,9 +105,9 @@ def render_minor_dashboard(
             draw.text((x1 + 48, y1), f"{name}", font=font12, fill=0)
             draw.text((x1 + 48, y1 + 16), f"{data}", font=font32, fill=0)
             draw.text(
-                (x1 + 48 + data_length * 18 + 2, y1 + cell_height - 34),
+                (x1 + 48 + data_length * 14 + 4, y1 + cell_height - 30),
                 unit,
-                font=font18,
+                font=font14,
                 fill=0,
             )
 

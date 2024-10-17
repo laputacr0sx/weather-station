@@ -1,9 +1,9 @@
-import requests
 from dataclasses import dataclass
-from enum import Enum
 from datetime import datetime
-from typing import List
+from enum import Enum
+from typing import List, Optional
 
+import requests
 from weather_display import HKO_URL
 
 
@@ -102,12 +102,17 @@ def parse_current_weather(json_data: dict) -> CurrentWeather:
         end_time=datetime.fromisoformat(json_data["rainfall"]["endTime"]),
     )
 
-    uvindex_data = [
-        UvindexDatum(place=datum["place"], value=datum["value"], desc=datum["desc"])
-        for datum in json_data["uvindex"]["data"]
-    ]
+    if type(json_data["uvindex"] is str):
+        uvindex = Uvindex(data=[], record_desc="")
+    else:
+        uvindex_data = [
+            UvindexDatum(place=datum["place"], value=datum["value"], desc=datum["desc"])
+            for datum in json_data["uvindex"]["data"]
+        ]
 
-    uvindex = Uvindex(data=uvindex_data, record_desc=json_data["uvindex"]["recordDesc"])
+        uvindex = Uvindex(
+            data=uvindex_data, record_desc=json_data["uvindex"]["recordDesc"]
+        )
 
     # Parse temperature data
     temperature_data = [
