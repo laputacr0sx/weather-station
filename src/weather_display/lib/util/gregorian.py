@@ -35,3 +35,6 @@ try:
 
 except requests.HTTPError:
     logging.error("Something went wrong...")
+
+except ConnectionError as e:
+    logging.error("Some error occurred")

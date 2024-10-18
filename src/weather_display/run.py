@@ -1,8 +1,9 @@
 import logging
-from datetime import datetime
 import platform
+from datetime import datetime
 
 from PIL import Image, ImageDraw
+from requests import HTTPError
 
 from weather_display import EPD_HEIGHT, EPD_WIDTH
 from weather_display.lib.render.dashboard import render_minor_dashboard
@@ -20,6 +21,7 @@ from weather_display.lib.util.sun import get_sun_status
 from weather_display.lib.util.uv_index import get_uv_data
 from weather_display.lib.util.weather_forecast import get_weather_forecast
 from weather_display.lib.util.wind import get_wind_data
+
 # from weather_display.lib.waveshare_epd import epd7in5_V2
 
 
@@ -40,11 +42,11 @@ def main():
         # epd.init()
         # epd.Clear()
 
+        logging.info("Gathering System Information")
+
         logging.info("Reading from BME280")
         env = EnvironmentData(temperature=27.9, humidity=63.1, pressure=1009.5)
         logging.info("Enviroment Data GOT!")
-
-        logging.info("Gathering System Information")
 
         now: datetime = datetime.now()
         logging.info("Current Datetime GOT! ")
@@ -98,6 +100,8 @@ def main():
         # epd.sleep()
 
         logging.info("Displaying Image Success")
+    except HTTPError as e:
+        logging.error(e)
 
     except IOError as e:
         logging.info(e)
