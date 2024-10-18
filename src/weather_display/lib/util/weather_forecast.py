@@ -1,9 +1,9 @@
-import requests
 from dataclasses import dataclass
-from enum import Enum
 from datetime import datetime
-from typing import Optional, List
+from enum import Enum
+from typing import List, Optional
 
+import requests
 from weather_display import HKO_URL
 
 

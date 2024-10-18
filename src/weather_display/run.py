@@ -26,10 +26,10 @@ from weather_display.lib.util.wind import get_wind_data
 
 
 logging.basicConfig(
-    filename="./error.log",  # Log file name
+    filename='./error.log',  # Log file name
     level=logging.DEBUG,  # Log level
-    format="%(asctime)s\t----[%(levelname)s]----\t%(message)s",  # Log format
-    datefmt="%Y-%m-%d %H:%M:%S",  # Date format
+    format='%(asctime)s\t[%(levelname)s]\t%(message)s',  # Log format
+    datefmt='%Y-%m-%d %H:%M:%S',  # Date format
 )
 
 
@@ -42,48 +42,48 @@ def main():
         # epd.init()
         # epd.Clear()
 
-        logging.info("Gathering System Information")
+        logging.info('Gathering System Information')
 
-        logging.info("Reading from BME280")
+        logging.info('Reading from BME280')
         env = EnvironmentData(temperature=27.9, humidity=63.1, pressure=1009.5)
-        logging.info("Enviroment Data GOT!")
+        logging.info('Enviroment Data GOT!')
 
         now: datetime = datetime.now()
-        logging.info("Current Datetime GOT! ")
+        logging.info('Current Datetime GOT! ')
 
         weather = get_current_weather()
-        logging.info("Current Weather GOT! ")
+        logging.info('Current Weather GOT! ')
 
         forecast = get_weather_forecast()
-        logging.info("Weatherforecast GOT! ")
+        logging.info('Weatherforecast GOT! ')
 
         uv = get_uv_data()[0]
-        logging.info("UV Data GOT! ")
+        logging.info('UV Data GOT! ')
 
         wind = get_wind_data()
-        logging.info("Wind Data GOT!")
+        logging.info('Wind Data GOT!')
 
         sun = get_sun_status()
-        logging.info("Sun Data GOT!")
+        logging.info('Sun Data GOT!')
 
         time_diff = get_record_time_diff(now, weather.temperature.record_time)
 
         humidity = get_humidity_data()
-        logging.info("Humidity Data GOT!")
+        logging.info('Humidity Data GOT!')
 
         greg = get_gregorian_date()
-        logging.info("Gregorian Date GOT!")
+        logging.info('Gregorian Date GOT!')
 
-        location = "沙田馬鞍山"
+        location = '沙田馬鞍山'
         now_str = get_now_str(now)
 
-        logging.info("Generating Image")
-        main_image = Image.new("1", (EPD_WIDTH, EPD_HEIGHT), 255)
+        logging.info('Generating Image')
+        main_image = Image.new('1', (EPD_WIDTH, EPD_HEIGHT), 255)
 
-        logging.info("Drawing Image")
+        logging.info('Drawing Image')
         draw = ImageDraw.Draw(main_image)
 
-        logging.info("Rendering different sections...")
+        logging.info('Rendering different sections...')
         render_header_section(
             greg, weather, humidity, location, now_str, draw, main_image
         )
@@ -91,15 +91,15 @@ def main():
         render_rainfall_section(main_image)
         render_minor_dashboard(env, wind, uv, weather, sun, draw, main_image)
         render_footer_section(draw, time_diff, now)
-        logging.info("Rendering Process Finished")
+        logging.info('Rendering Process Finished')
 
-        logging.info("Display Image")
+        logging.info('Display Image')
         main_image.show()
         # epd.display(epd.getbuffer(main_image))
         #
         # epd.sleep()
 
-        logging.info("Displaying Image Success")
+        logging.info('Displaying Image Success')
     except HTTPError as e:
         logging.error(e)
 
@@ -108,8 +108,8 @@ def main():
 
     except Exception:
         # Log the exception with traceback
-        logging.error("An error occurred", exc_info=True)
+        logging.error('An error occurred', exc_info=True)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

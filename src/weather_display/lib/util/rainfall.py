@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 
-personal_path = "/Users/veilics/Library/Fonts/"
-font_path = personal_path + "Cubic_11.ttf"
+personal_path = '/Users/veilics/Library/Fonts/'
+font_path = personal_path + 'Cubic_11.ttf'
 
 
 def addlabels(x, y):
@@ -13,12 +13,12 @@ def addlabels(x, y):
         if y[i] == 0:
             break
         mid_point = (0 + y[i]) / 2
-        plt.text(i, mid_point, y[i], ha="center", c="white", va="center")
+        plt.text(i, mid_point, y[i], ha='center', c='white', va='center')
 
 
 def render_rainfall_chart():
     # Step 1: Download the CSV file
-    url = "https://data.weather.gov.hk/weatherAPI/hko_data/F3/Gridded_rainfall_nowcast.csv"
+    url = 'https://data.weather.gov.hk/weatherAPI/hko_data/F3/Gridded_rainfall_nowcast.csv'
     response = requests.get(url)
 
     # Step 2: Read the CSV file into a DataFrame
@@ -26,14 +26,14 @@ def render_rainfall_chart():
 
     df = df.rename(
         columns={
-            "Updated Date and Time (in Hong Kong Time)": "updatedAt",
-            "Ending Date and Time (in Hong Kong Time)": "endedAt",
-            "Half-hourly Nowcast Accumulated Rainfall (mm)": "rainfall",
+            'Updated Date and Time (in Hong Kong Time)': 'updatedAt',
+            'Ending Date and Time (in Hong Kong Time)': 'endedAt',
+            'Half-hourly Nowcast Accumulated Rainfall (mm)': 'rainfall',
         }
     )
 
-    df["updatedAt"] = pd.to_datetime(df["updatedAt"], format="%Y%m%d%H%M")
-    df["endedAt"] = pd.to_datetime(df["endedAt"], format="%Y%m%d%H%M")
+    df['updatedAt'] = pd.to_datetime(df['updatedAt'], format='%Y%m%d%H%M')
+    df['endedAt'] = pd.to_datetime(df['endedAt'], format='%Y%m%d%H%M')
 
     # Row numbers to extract (zero-based index)
     row_numbers = [
@@ -61,11 +61,11 @@ def render_rainfall_chart():
     filtered_data = filtered_data.reset_index(
         drop=True
     )  # Reset index to ensure sequential grouping
-    filtered_data["group"] = filtered_data.index // 4
+    filtered_data['group'] = filtered_data.index // 4
 
     # Calculate the average rainfall for each group
-    # average_rainfall = filtered_data.groupby("group")["rainfall"].mean()
-    average_rainfall = [0.4, 1, 1.2, 0.2]
+    average_rainfall = filtered_data.groupby('group')['rainfall'].mean()
+    # average_rainfall = [0.4, 1, 1.2, 0.2]
 
     # Display the filtered data and average rainfall
     # print(filtered_data)
@@ -73,29 +73,29 @@ def render_rainfall_chart():
 
     # Time intervals
     ended_at_formatted = (
-        filtered_data["endedAt"].dt.strftime("%I:%M").unique()
+        filtered_data['endedAt'].dt.strftime('%I:%M').unique()
     )  # hour = "小時"
 
     # Create a figure with a white background
     # plt.figure(figsize=(0.9, 0.31), facecolor="white")
-    plt.figure(figsize=(1.8, 0.65), facecolor="white", dpi=300)
+    plt.figure(figsize=(1.8, 0.65), facecolor='white', dpi=300)
 
-    font = {"family": "Cubic 11", "size": 4}
-    plt.rc("font", **font)
+    font = {'family': 'Cubic 11', 'size': 4}
+    plt.rc('font', **font)
 
     plt.bar(
         ended_at_formatted,
         average_rainfall,
-        color="black",
-        edgecolor="black",
+        color='black',
+        edgecolor='black',
     )
 
     addlabels(ended_at_formatted, average_rainfall)
 
     # Remove axis labels and title
-    plt.xlabel("")
-    plt.ylabel("")
-    plt.title("")
+    plt.xlabel('')
+    plt.ylabel('')
+    plt.title('')
 
     # plt.xticks(visible=False)
 
@@ -109,7 +109,7 @@ def render_rainfall_chart():
     # plt.grid(True, color="gray", linestyle="--", linewidth=0.5)
 
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight")
+    plt.savefig(buf, format='png', bbox_inches='tight')
     # plt.show()
     plt.close()
     buf.seek(0)

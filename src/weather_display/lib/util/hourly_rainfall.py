@@ -1,8 +1,9 @@
-import requests
-from enum import Enum
-from datetime import datetime
-from typing import List
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import List
+
+import requests
 
 
 class Unit(Enum):

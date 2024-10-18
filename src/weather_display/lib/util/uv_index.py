@@ -1,8 +1,9 @@
-import requests
-from datetime import datetime
 import csv
-from io import StringIO
 from dataclasses import dataclass
+from datetime import datetime
+from io import StringIO
+
+import requests
 
 
 @dataclass

@@ -2,10 +2,6 @@ import os
 
 from PIL import Image, ImageDraw
 from weather_display import PIC_DIR
-from weather_display.lib.util.current_weather import CurrentWeather
-from weather_display.lib.util.gregorian import GregorianDate
-from weather_display.lib.util.humidity import HumidityData
-
 from weather_display.assest.font.cubic_font import (
     font18,
     font24,
@@ -13,6 +9,9 @@ from weather_display.assest.font.cubic_font import (
     font48,
     font64,
 )
+from weather_display.lib.util.current_weather import CurrentWeather
+from weather_display.lib.util.gregorian import GregorianDate
+from weather_display.lib.util.humidity import HumidityData
 
 
 def render_header_section(

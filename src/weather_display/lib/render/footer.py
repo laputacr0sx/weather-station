@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from PIL import ImageDraw
-
 from weather_display.assest.font.cubic_font import font12
 
 
