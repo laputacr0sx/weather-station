@@ -1,14 +1,19 @@
-import matplotlib.pyplot as plt
-from PIL import Image
-import requests
 import io
+
+import matplotlib.pyplot as plt
 import pandas as pd
-from pyfonts import load_font
-from matplotlib.font_manager import fontManager
-from matplotlib import font_manager
+import requests
 
 personal_path = "/Users/veilics/Library/Fonts/"
 font_path = personal_path + "Cubic_11.ttf"
+
+
+def addlabels(x, y):
+    for i in range(len(x)):
+        if y[i] == 0:
+            break
+        mid_point = (0 + y[i]) / 2
+        plt.text(i, mid_point, y[i], ha="center", c="white", va="center")
 
 
 def render_rainfall_chart():
@@ -59,7 +64,8 @@ def render_rainfall_chart():
     filtered_data["group"] = filtered_data.index // 4
 
     # Calculate the average rainfall for each group
-    average_rainfall = filtered_data.groupby("group")["rainfall"].mean()
+    # average_rainfall = filtered_data.groupby("group")["rainfall"].mean()
+    average_rainfall = [0.4, 1, 1.2, 0.2]
 
     # Display the filtered data and average rainfall
     # print(filtered_data)
@@ -71,8 +77,8 @@ def render_rainfall_chart():
     )  # hour = "小時"
 
     # Create a figure with a white background
-    plt.figure(figsize=(1.8, 0.65), facecolor="white")
-    # plt.figure(figsize=(5.2, 2.1), facecolor="white")
+    # plt.figure(figsize=(0.9, 0.31), facecolor="white")
+    plt.figure(figsize=(1.8, 0.65), facecolor="white", dpi=300)
 
     font = {"family": "Cubic 11", "size": 4}
     plt.rc("font", **font)
@@ -84,6 +90,8 @@ def render_rainfall_chart():
         edgecolor="black",
     )
 
+    addlabels(ended_at_formatted, average_rainfall)
+
     # Remove axis labels and title
     plt.xlabel("")
     plt.ylabel("")
@@ -92,36 +100,20 @@ def render_rainfall_chart():
     # plt.xticks(visible=False)
 
     # Set y-axis to start from 0
-    plt.ylim(
-        0, max(average_rainfall) + 0.5
-    )  # Add a little space above the max value for better visualization
+    # plt.ylim(0, max(average_rainfall) + 0.5)
+    ylimit = max(average_rainfall) * 1.1 if max(average_rainfall) > 0 else 0.3
+    # Add a little space above the max value for better visualization
+    plt.ylim(0, ylimit)
 
     # Add grid for scale reference
     # plt.grid(True, color="gray", linestyle="--", linewidth=0.5)
 
-    # plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-
-    # plt.tight_layout()
-
-    # Save the plot as a PNG file
-    # plt.savefig(
-    #     "rainfall.png",
-    #     format="png",
-    #     bbox_inches="tight",
-    #     dpi=300,
-    # )
-
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight", dpi=300)
-
-    # Convert the PNG file to BMP format with 1-bit color
-    # with Image.open("rainfall.png") as img:
-    #     img.convert("1").save("rainfall.bmp", format="bmp")
-
+    plt.savefig(buf, format="png", bbox_inches="tight")
+    # plt.show()
     plt.close()
     buf.seek(0)
 
-    return buf.getvalue()
-
     # Display the plot
-    # plt.show()
+
+    return buf.getvalue()

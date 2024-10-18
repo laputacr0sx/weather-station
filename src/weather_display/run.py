@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+import platform
 
 from PIL import Image, ImageDraw
 
@@ -19,7 +20,8 @@ from weather_display.lib.util.sun import get_sun_status
 from weather_display.lib.util.uv_index import get_uv_data
 from weather_display.lib.util.weather_forecast import get_weather_forecast
 from weather_display.lib.util.wind import get_wind_data
-from weather_display.lib.waveshare_epd import epd7in5_V2
+# from weather_display.lib.waveshare_epd import epd7in5_V2
+
 
 logging.basicConfig(
     filename="./error.log",  # Log file name
@@ -31,12 +33,12 @@ logging.basicConfig(
 
 def main():
     try:
-        logging.info("Initiate EPD7in5")
-        epd = epd7in5_V2.EPD()
+        # logging.info("Initiate EPD7in5")
+        # epd = epd7in5_V2.EPD()
 
-        logging.info("init and Clear")
-        epd.init()
-        epd.Clear()
+        # logging.info("init and Clear")
+        # epd.init()
+        # epd.Clear()
 
         logging.info("Reading from BME280")
         env = EnvironmentData(temperature=27.9, humidity=63.1, pressure=1009.5)
@@ -90,9 +92,10 @@ def main():
         logging.info("Rendering Process Finished")
 
         logging.info("Display Image")
-        # main_image.show()
-
-        epd.display(epd.getbuffer(main_image))
+        main_image.show()
+        # epd.display(epd.getbuffer(main_image))
+        #
+        # epd.sleep()
 
         logging.info("Displaying Image Success")
 
