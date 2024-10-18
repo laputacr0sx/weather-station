@@ -23,37 +23,37 @@ def render_minor_dashboard(
     valid_data = [
         [
             {
-                "icon_uri": "sunrise.png",
-                "name": "日出時間",
-                "data": sun.rise,
-                "unit": None,
+                'icon_uri': 'sunrise.png',
+                'name': '日出時間',
+                'data': sun.rise,
+                'unit': None,
             },
             {
-                "icon_uri": "80.png",
-                "name": f"{wind.station}風速",
-                "data": f"{wind.avg_wind_speed}",
-                "unit": f"{wind.wind_direction}",
+                'icon_uri': '80.png',
+                'name': f'{wind.station}風速',
+                'data': f'{wind.avg_wind_speed}',
+                'unit': f'{wind.wind_direction}',
             },
             {
-                "icon_uri": "uv.png",
-                "name": "紫外線指數",
+                'icon_uri': 'uv.png',
+                'name': '紫外線指數',
                 # "data": weather.uvindex.data[0].value,
-                "data": uv.uv_index,
-                "unit": f"@{uv.datetime.strftime("%H:%M")}",
+                'data': uv.uv_index,
+                'unit': f"@{uv.datetime.strftime("%H:%M")}",
             },
             {
-                "icon_uri": "thermo.png",
-                "name": "室內氣溫",
-                "data": env.temperature,
-                "unit": None,
+                'icon_uri': 'thermo.png',
+                'name': '屋企氣溫',
+                'data': env.temperature,
+                'unit': None,
             },
         ],
         [
             {
-                "icon_uri": "sunset.png",
-                "name": "日落時間",
-                "data": sun.set,
-                "unit": None,
+                'icon_uri': 'sunset.png',
+                'name': '日落時間',
+                'data': sun.set,
+                'unit': None,
             },
             # {
             #     "icon_uri": "outdoor_humidity.png",
@@ -62,22 +62,22 @@ def render_minor_dashboard(
             #     "unit": "mm",
             # },
             {
-                "icon_uri": "outdoor_humidity.png",
-                "name": f"{weather.rainfall.data[6].place}降雨量",
-                "data": get_hourly_rainfall().hourly_rainfall[21].value,
-                "unit": "mm",
+                'icon_uri': 'outdoor_humidity.png',
+                'name': f'{weather.rainfall.data[6].place}降雨量',
+                'data': get_hourly_rainfall().hourly_rainfall[21].value,
+                'unit': 'mm',
             },
             {
-                "icon_uri": "barometer.png",
-                "name": "室內氣壓",
-                "data": f"{env.pressure/1000:.2f}",
-                "unit": "bar",
+                'icon_uri': 'barometer.png',
+                'name': '屋企氣壓',
+                'data': f'{env.pressure/1000:.2f}',
+                'unit': 'bar',
             },
             {
-                "icon_uri": "humidity.png",
-                "name": "室內濕度",
-                "data": env.humidity,
-                "unit": None,
+                'icon_uri': 'humidity.png',
+                'name': '屋企濕度',
+                'data': env.humidity,
+                'unit': None,
             },
         ],
     ]
@@ -95,15 +95,15 @@ def render_minor_dashboard(
             y1 = top_left_y + j * cell_height
 
             cell = valid_data[i][j]
-            name = cell["name"]
-            data = cell["data"]
-            img = cell["icon_uri"] or "na.png"
-            unit = cell["unit"] or ""
+            name = cell['name']
+            data = cell['data']
+            img = cell['icon_uri'] or 'na.png'
+            unit = cell['unit'] or ''
 
             data_length = len(data) if type(data) is str else len(str(abs(data)))
 
-            draw.text((x1 + 48, y1), f"{name}", font=font12, fill=0)
-            draw.text((x1 + 48, y1 + 16), f"{data}", font=font32, fill=0)
+            draw.text((x1 + 48, y1), f'{name}', font=font12, fill=0)
+            draw.text((x1 + 48, y1 + 16), f'{data}', font=font32, fill=0)
             draw.text(
                 (x1 + 48 + data_length * 14 + 4, y1 + cell_height - 30),
                 unit,
