@@ -1,11 +1,11 @@
 import logging
-import platform
 from datetime import datetime
 
 from PIL import Image, ImageDraw
 from requests import HTTPError
 
 from weather_display import EPD_HEIGHT, EPD_WIDTH
+from weather_display.assest.font.cubic_font import font12, font18, font24, font40
 from weather_display.lib.render.dashboard import render_minor_dashboard
 from weather_display.lib.render.footer import render_footer_section
 from weather_display.lib.render.forecast import render_forecast_section
@@ -85,11 +85,11 @@ def main():
 
         logging.info('Rendering different sections...')
         render_header_section(
-            greg, weather, humidity, location, now_str, draw, main_image
+            greg, weather, humidity, location, now_str, draw, main_image, env
         )
         render_forecast_section(forecast, draw, main_image)
         render_rainfall_section(main_image)
-        render_minor_dashboard(env, wind, uv, weather, sun, draw, main_image)
+        render_minor_dashboard(wind, uv, sun, draw, main_image)
         render_footer_section(draw, time_diff, now)
         logging.info('Rendering Process Finished')
 

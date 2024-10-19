@@ -3,19 +3,14 @@ import os
 from PIL import Image, ImageDraw
 from weather_display import PIC_DIR
 from weather_display.assest.font.cubic_font import font12, font14, font32
-from weather_display.lib.util.current_weather import CurrentWeather
-from weather_display.lib.util.env_sensor import EnvironmentData
-from weather_display.lib.util.hourly_rainfall import get_hourly_rainfall
 from weather_display.lib.util.sun import SunStatus
 from weather_display.lib.util.uv_index import UVIndex
 from weather_display.lib.util.wind import WindData
 
 
 def render_minor_dashboard(
-    env: EnvironmentData,
     wind: WindData,
     uv: UVIndex,
-    weather: CurrentWeather,
     sun: SunStatus,
     draw: ImageDraw.ImageDraw,
     image: Image.Image,
@@ -23,17 +18,19 @@ def render_minor_dashboard(
     valid_data = [
         [
             {
-                'icon_uri': 'sunrise.png',
-                'name': '日出時間',
-                'data': sun.rise,
-                'unit': None,
-            },
-            {
                 'icon_uri': '80.png',
                 'name': f'{wind.station}風速',
                 'data': f'{wind.avg_wind_speed}',
                 'unit': f'{wind.wind_direction}',
             },
+            {
+                'icon_uri': 'sunrise.png',
+                'name': '日出時間',
+                'data': sun.rise,
+                'unit': None,
+            },
+        ],
+        [
             {
                 'icon_uri': 'uv.png',
                 'name': '紫外線指數',
@@ -42,50 +39,18 @@ def render_minor_dashboard(
                 'unit': f"@{uv.datetime.strftime("%H:%M")}",
             },
             {
-                'icon_uri': 'thermo.png',
-                'name': '屋企氣溫',
-                'data': env.temperature,
-                'unit': None,
-            },
-        ],
-        [
-            {
                 'icon_uri': 'sunset.png',
                 'name': '日落時間',
                 'data': sun.set,
-                'unit': None,
-            },
-            # {
-            #     "icon_uri": "outdoor_humidity.png",
-            #     "name": f"{weather.rainfall.data[6].place}降雨量",
-            #     "data": weather.rainfall.data[6].max,
-            #     "unit": "mm",
-            # },
-            {
-                'icon_uri': 'outdoor_humidity.png',
-                'name': f'{weather.rainfall.data[6].place}降雨量',
-                'data': get_hourly_rainfall().hourly_rainfall[21].value,
-                'unit': 'mm',
-            },
-            {
-                'icon_uri': 'barometer.png',
-                'name': '屋企氣壓',
-                'data': f'{env.pressure/1000:.2f}',
-                'unit': 'bar',
-            },
-            {
-                'icon_uri': 'humidity.png',
-                'name': '屋企濕度',
-                'data': env.humidity,
                 'unit': None,
             },
         ],
     ]
 
     ROW = 2
-    COL = 4
+    COL = 2
     top_left_x = 2
-    top_left_y = 230
+    top_left_y = 358
     cell_width = 150
     cell_height = 64
 

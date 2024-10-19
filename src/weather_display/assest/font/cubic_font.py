@@ -1,6 +1,6 @@
 from PIL import ImageFont
 
-CUBIC_FONT_PATH = "./Cubic_11.ttf"
+CUBIC_FONT_PATH = './Cubic_11.ttf'
 
 font64 = ImageFont.truetype(CUBIC_FONT_PATH, 64)
 font48 = ImageFont.truetype(CUBIC_FONT_PATH, 48)
