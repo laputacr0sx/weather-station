@@ -1,7 +1,7 @@
 import os
 
 from PIL import Image, ImageDraw
-from weather_display import PIC_DIR, EPD_WIDTH
+from weather_display import EPD_WIDTH, PIC_DIR
 from weather_display.assest.font.cubic_font import (
     font12,
     font18,
@@ -61,7 +61,7 @@ def dates(location: str, now: str, gregorian: GregorianDate, draw: ImageDraw.Ima
     draw.text((greg_x_position, 92), gregorian_date, font=font18, fill=0)
 
 
-def major_weather(weather, humidity, image, draw):
+def major_weather(weather, humidity, image, draw: ImageDraw.ImageDraw):
     # Render weather icon
     icon = Image.open(os.path.join(PIC_DIR, f'{weather.icon[0]}.png'))
     icon_pos = (20, 0)
@@ -77,13 +77,46 @@ def major_weather(weather, humidity, image, draw):
     #     fill=0,
     # )
     image.paste(resized_icon, icon_pos)
+    temperature_boundingbox = draw.textbbox(
+        (278, 2),
+        f'{weather.temperature.data[0].value}',
+        font=font64,
+        anchor=None,
+        spacing=4,
+        align='left',
+        direction=None,
+        features=None,
+        language=None,
+        stroke_width=0,
+        embedded_color=False,
+        font_size=None,
+    )
+    humidity_bb = draw.textbbox(
+        (278, 68),
+        f'{humidity.humidity}',
+        font=font48,
+        anchor=None,
+        spacing=4,
+        align='left',
+        direction=None,
+        features=None,
+        language=None,
+        stroke_width=0,
+        embedded_color=False,
+        font_size=None,
+    )
+
+    # print(temperature_boundingbox)
 
     # Render temperature
-    draw.text((278, 2), f'{weather.temperature.data[0].value} C', font=font64, fill=0)
-    draw.text((358, 2), 'o', font=font24, fill=0)
+    draw.text(
+        (278, 2), f'{weather.temperature.data[0].value:.00f}', font=font64, fill=0
+    )
+    draw.text((temperature_boundingbox[2] + 2, 14), 'o', font=font18, fill=0)
+    draw.text((temperature_boundingbox[2] + 10, 17), 'C', font=font48, fill=0)
     # Render humidity
     draw.text((278, 68), f'{humidity.humidity}', font=font48, fill=0)
-    draw.text((334, 82), '%', font=font32, fill=0)
+    draw.text((humidity_bb[2], 82), '%', font=font32, fill=0)
 
 
 def inhouse_weather(env: EnvironmentData, draw: ImageDraw.ImageDraw):
@@ -107,17 +140,37 @@ def inhouse_weather(env: EnvironmentData, draw: ImageDraw.ImageDraw):
         ([house_tip, left_wall, left_ground, right_ground, right_wall]),
         255,
         0,
+        4,
+    )
+    draw.line((left_wall, right_wall), 0, 4)
+    draw.rectangle(
+        (
+            (house_tip[0] - 10, house_tip[1] + 20),
+            (house_tip[0] + 10, house_tip[1] + 40),
+        ),
+        255,
+        0,
+        3,
+    )
+    draw.line(
+        ((house_tip[0], house_tip[1] + 20), (house_tip[0], house_tip[1] + 40)), 0, 2
+    )
+    draw.line(
+        (
+            (house_tip[0] - 10, house_tip[1] + 30),
+            (house_tip[0] + 10, house_tip[1] + 30),
+        ),
+        0,
         2,
     )
-    draw.line((left_wall, right_wall), 0, 2)
+
     # Drawing chimney
     chimney_bottom_left = (house_tip[0] + 27, house_tip[1] + 21)
     chimney_top_right = (chimney_bottom_left[0] + 14, chimney_bottom_left[1] - 19)
-
     draw.line(
         (chimney_bottom_left, (chimney_bottom_left[0], chimney_bottom_left[1] - 19)),
         0,
-        2,
+        3,
     )
     draw.line(
         (
@@ -127,7 +180,7 @@ def inhouse_weather(env: EnvironmentData, draw: ImageDraw.ImageDraw):
             )
         ),
         0,
-        2,
+        3,
     )
     draw.line(
         (
@@ -135,15 +188,52 @@ def inhouse_weather(env: EnvironmentData, draw: ImageDraw.ImageDraw):
             (chimney_top_right[0], chimney_bottom_left[1] + 12),
         ),
         0,
+        3,
+    )
+    draw.arc(
+        (
+            (chimney_top_right[0] - 8, chimney_top_right[1] - 10),
+            (chimney_top_right[0] + 28, chimney_top_right[1] - 2),
+        ),
+        150,
+        30,
+        0,
         2,
     )
+    draw.arc(
+        (
+            (chimney_top_right[0] + 4, chimney_top_right[1] - 4),
+            (chimney_top_right[0] + 20, chimney_top_right[1] + 2),
+        ),
+        start=150,
+        end=30,
+        fill=0,
+        width=2,
+    )
+    # draw.arc([55, -10, 85, 10], start=30, end=150, fill=0, width=2)
+    # draw.arc([50, -20, 90, 0], start=30, end=150, fill=0, width=2)
 
     # Drawing Temperature & Humidity Text
     degree_pos = (left_wall[0] + 2, left_ground[1] - 70)
     draw.text(degree_pos, f'{env.temperature:.01f}', font=font40, fill=0)
     draw.text((degree_pos[0] + 84, degree_pos[1] + 14), 'o', font=font12, fill=0)
-    draw.text((degree_pos[0] + 90, degree_pos[1] + 14), 'C', font=font24, fill=0)
+    draw.text((degree_pos[0] + 90, degree_pos[1] + 15), 'C', font=font24, fill=0)
 
     humidity_pos = (left_ground[0] + 4, left_ground[1] - 26)
+    inhouse_humidity_bb = draw.textbbox(
+        humidity_pos,
+        f'{env.humidity:0.1f}',
+        font=font24,
+        anchor=None,
+        spacing=4,
+        align='left',
+        direction=None,
+        features=None,
+        language=None,
+        stroke_width=0,
+        embedded_color=False,
+        font_size=None,
+    )
+
     draw.text(humidity_pos, f'{env.humidity:0.1f}', font=font24, fill=0)
-    draw.text((humidity_pos[0] + 44, humidity_pos[1] + 12), '%', font=font12, fill=0)
+    draw.text((inhouse_humidity_bb[2], humidity_pos[1] + 11), '%', font=font12, fill=0)

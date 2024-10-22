@@ -62,7 +62,7 @@ def render_minor_dashboard(
             cell = valid_data[i][j]
             name = cell['name']
             data = cell['data']
-            img = cell['icon_uri'] or 'na.png'
+            icon = cell['icon_uri'] or 'na.png'
             unit = cell['unit'] or ''
 
             data_length = len(data) if type(data) is str else len(str(abs(data)))
@@ -76,6 +76,6 @@ def render_minor_dashboard(
                 fill=0,
             )
 
-            icon = Image.open(os.path.join(PIC_DIR, img))
+            icon = Image.open(os.path.join(PIC_DIR, icon))
             resized_icon = icon.resize((48, 48))
-            image.paste(resized_icon, (x1, y1))
+            image.paste(resized_icon, (x1, y1 + 8))

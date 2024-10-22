@@ -5,7 +5,6 @@ from PIL import Image, ImageDraw
 from requests import HTTPError
 
 from weather_display import EPD_HEIGHT, EPD_WIDTH
-from weather_display.assest.font.cubic_font import font12, font18, font24, font40
 from weather_display.lib.render.dashboard import render_minor_dashboard
 from weather_display.lib.render.footer import render_footer_section
 from weather_display.lib.render.forecast import render_forecast_section
@@ -45,7 +44,7 @@ def main():
         logging.info('Gathering System Information')
 
         logging.info('Reading from BME280')
-        env = EnvironmentData(temperature=27.9, humidity=63.1, pressure=1009.5)
+        env = EnvironmentData(temperature=27.9, humidity=63.4, pressure=1009.5)
         logging.info('Enviroment Data GOT!')
 
         now: datetime = datetime.now()
