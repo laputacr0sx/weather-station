@@ -90,6 +90,7 @@ def main():
         render_rainfall_section(main_image)
         render_minor_dashboard(wind, uv, sun, draw, main_image)
         render_footer_section(draw, time_diff, now)
+
         logging.info('Rendering Process Finished')
 
         logging.info('Display Image')

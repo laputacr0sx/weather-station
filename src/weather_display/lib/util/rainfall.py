@@ -2,7 +2,9 @@ import io
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from pandas.core.groupby.generic import SeriesGroupBy
 import requests
+from pandas import Series
 
 personal_path = '/Users/veilics/Library/Fonts/'
 font_path = personal_path + 'Cubic_11.ttf'
@@ -56,7 +58,7 @@ def render_rainfall_chart():
     ]
 
     # Step 3: Filter the rows by their index
-    filtered_data = df.iloc[row_numbers]
+    filtered_data: Series = df.iloc[row_numbers]
 
     filtered_data = filtered_data.reset_index(
         drop=True
@@ -66,6 +68,14 @@ def render_rainfall_chart():
     # Calculate the average rainfall for each group
     average_rainfall = filtered_data.groupby('group')['rainfall'].mean()
     # average_rainfall = [0.4, 1, 1.2, 0.2]
+
+    sum_rainfall = 0
+    for rain in average_rainfall:
+        sum_rainfall += rain
+
+    if sum_rainfall == 0:
+        print('got 0 rainfall')
+        return None
 
     # Display the filtered data and average rainfall
     # print(filtered_data)
