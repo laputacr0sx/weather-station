@@ -77,20 +77,8 @@ def major_weather(weather, humidity, image, draw: ImageDraw.ImageDraw):
     #     fill=0,
     # )
     image.paste(resized_icon, icon_pos)
-    temperature_boundingbox = draw.textbbox(
-        (278, 2),
-        f'{weather.temperature.data[0].value}',
-        font=font64,
-        anchor=None,
-        spacing=4,
-        align='left',
-        direction=None,
-        features=None,
-        language=None,
-        stroke_width=0,
-        embedded_color=False,
-        font_size=None,
-    )
+    temp_text = f'{weather.temperature.data[0].value:.0f}'
+    temperature_boundingbox = draw.textbbox((278, 2), temp_text, font=font64)
     humidity_bb = draw.textbbox(
         (278, 68),
         f'{humidity.humidity}',
@@ -106,12 +94,8 @@ def major_weather(weather, humidity, image, draw: ImageDraw.ImageDraw):
         font_size=None,
     )
 
-    # print(temperature_boundingbox)
-
     # Render temperature
-    draw.text(
-        (278, 2), f'{weather.temperature.data[0].value:.00f}', font=font64, fill=0
-    )
+    draw.text((278, 2), temp_text, font=font64, fill=0)
     draw.text((temperature_boundingbox[2] + 2, 14), 'o', font=font18, fill=0)
     draw.text((temperature_boundingbox[2] + 10, 17), 'C', font=font48, fill=0)
     # Render humidity

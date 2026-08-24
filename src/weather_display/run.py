@@ -16,6 +16,7 @@ from weather_display.lib.util.current_weather import get_current_weather
 from weather_display.lib.util.env_sensor import EnvironmentData
 from weather_display.lib.util.gregorian import get_gregorian_date
 from weather_display.lib.util.humidity import get_humidity_data
+from weather_display.lib.util.rainfall_nowcast import get_home_nowcast
 from weather_display.lib.util.sun import get_sun_status
 from weather_display.lib.util.uv_index import get_uv_data
 from weather_display.lib.util.weather_forecast import get_weather_forecast
@@ -73,6 +74,12 @@ def main():
         greg = get_gregorian_date()
         logging.info('Gregorian Date GOT!')
 
+        nowcast = get_home_nowcast()
+        if nowcast is None:
+            logging.warning('Rainfall nowcast unavailable - section will show error line')
+        else:
+            logging.info('Home nowcast GOT! peak=%.2fmm/30min' % nowcast.peak_per_slot_mm)
+
         location = '沙田馬鞍山'
         now_str = get_now_str(now)
 
@@ -87,7 +94,7 @@ def main():
             greg, weather, humidity, location, now_str, draw, main_image, env
         )
         render_forecast_section(forecast, draw, main_image)
-        render_rainfall_section(main_image)
+        render_rainfall_section(main_image, nowcast)
         render_minor_dashboard(wind, uv, sun, draw, main_image)
         render_footer_section(draw, time_diff, now)
 

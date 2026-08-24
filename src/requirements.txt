@@ -4,10 +4,6 @@
 # pin them in a lockfile if reproducible installs matter.
 Pillow==10.4.0
 requests==2.32.3
-numpy==1.26.4
-pandas==2.2.3
-matplotlib==3.8.4
-selenium==4.25.0
 
 # --- optional: hardware-only (Raspberry Pi) ---------------------------------
 # spidev and gpiozero are only importable on the Pi; install there separately:

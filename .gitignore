@@ -1,3 +1,11 @@
 __pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+.env
+*.log
+error.log
 tests/output/
-*.pyc
+.claude/

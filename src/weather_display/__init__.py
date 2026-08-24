@@ -13,6 +13,4 @@ __all__ = ["cubic_font"]
 EPD_WIDTH = 800
 EPD_HEIGHT = 480
 HKO_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php"
-LINE_DIR = os.path.join(os.path.dirname(__file__), "assest", "img", "out")
 PIC_DIR = os.path.join(os.path.dirname(__file__), "assest", "img", "pic")
-ASSEST_DIR = os.path.join(os.path.dirname(__file__), "assest")
