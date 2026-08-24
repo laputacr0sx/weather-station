@@ -15,7 +15,9 @@ def parse_gregorian_json(json: dict) -> GregorianDate:
     return GregorianDate(lunar_year=json["LunarYear"], lunar_date=json["LunarDate"])
 
 
-def get_gregorian_date(date: datetime = datetime.now()):
+def get_gregorian_date(date: datetime | None = None):
+    if date is None:
+        date = datetime.now()
     url = "https://data.weather.gov.hk/weatherAPI/opendata/lunardate.php"
 
     year = date.year

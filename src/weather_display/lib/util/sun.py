@@ -21,7 +21,9 @@ def parse_sun_json(json: dict) -> SunStatus:
     )
 
 
-def get_sun_status(date: datetime = datetime.now()):
+def get_sun_status(date: datetime | None = None):
+    if date is None:
+        date = datetime.now()
     url = "https://data.weather.gov.hk/weatherAPI/opendata/opendata.php"
     params = {
         "dataType": "SRS",
