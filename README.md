@@ -26,3 +26,17 @@ journalctl -u weather-display.service -n 50 --no-pager
 ```
 
 If SPI was off before install, reboot once so `/dev/spidev0.0` appears.
+
+## Live screenshot
+
+Fetches current HKO data and writes an 800×480 PNG (does not touch the panel):
+
+```bash
+PYTHONPATH=src python -m weather_display.run --save tests/output/live.png
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:PYTHONPATH="src"; python -m weather_display.run --save tests/output/live.png
+```

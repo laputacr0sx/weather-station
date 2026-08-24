@@ -1,18 +1,10 @@
 """Render the home rainfall-nowcast section as a 1-bit black-and-white panel.
 
-Layout, top-down, in the (290, 220) -> (790, 350) region of the dashboard:
+Full-width band under the 5-day forecast, sized to be glanceable from ~4 m:
 
-  1. Verdict line (font24, bold by virtue of size) - the answer
-     "is it going to rain in the next 2 hours?"
-  2. Time-to-rain line (font14) - "approximately N minutes from now",
-     only when rain is forecast and the first slot is still in the future.
-  3. Four half-hour slots, each with:
-       - the slot's end time in 24-hour clock (font14)
-       - an intensity icon (36x36) chosen from the existing picture set
-       - the per-slot mm value in plain text (font12)
-
-The section always renders, even for an all-zero forecast - the user wants
-to know "no rain" too, not a blank space.
+  1. Verdict (font40) - "is it going to rain in the next 2 hours?"
+  2. Time-to-rain (font18)
+  3. Four half-hour slots: 24-hour clock (font18), 48px icon, mm (font14)
 """
 import os
 from datetime import datetime, timedelta
@@ -20,22 +12,18 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw
 
 from weather_display import PIC_DIR
-from weather_display.assest.font.cubic_font import font12, font14, font18
+from weather_display.assest.font.cubic_font import font14, font18, font40
 from weather_display.lib.util.rainfall_nowcast import HomeNowcast, NowcastSlot
 
-# Section geometry. Aligned with the previous chart paste at (290, 220);
-# now hard-stopped at y=350 so it does not collide with render_minor_dashboard
-# (which starts at y=358).
-SECTION_X = 290
-SECTION_Y = 220
-SECTION_W = 510
-SECTION_H = 130
+SECTION_X = 8
+SECTION_Y = 242
+SECTION_W = 784
+SECTION_H = 150
 
-# Per-slot layout
 SLOT_COUNT = 4
-SLOT_GAP = 8
+SLOT_GAP = 12
 SLOT_W = (SECTION_W - SLOT_GAP * (SLOT_COUNT - 1)) // SLOT_COUNT
-ICON_SIZE = 36
+ICON_SIZE = 48
 
 
 # Severity thresholds in mm per 30 min. These bracket the official HKO
@@ -108,9 +96,8 @@ def _draw_one_slot(
 ):
     # Time label centred in the cell
     time_text = _slot_label(slot)
-    bbox = draw.textbbox((0, 0), time_text, font=font14)
-    text_w = bbox[2] - bbox[0]
-    draw.text((x + (SLOT_W - text_w) // 2, y), time_text, font=font14, fill=0)
+    cx = x + SLOT_W // 2
+    draw.text((cx, y + 14), time_text, font=font18, fill=0, anchor="ms")
 
     # Icon centred below the time label
     icon_name = _icon_for(slot.per_slot_mm)
@@ -118,19 +105,18 @@ def _draw_one_slot(
         try:
             icon = Image.open(os.path.join(PIC_DIR, icon_name)).convert("1")
             icon = icon.resize((ICON_SIZE, ICON_SIZE))
-            image.paste(icon, (x + (SLOT_W - ICON_SIZE) // 2, y + 22))
+            image.paste(icon, (x + (SLOT_W - ICON_SIZE) // 2, y + 20))
         except FileNotFoundError:
             pass  # icon missing - cell just shows the time, no crash
 
     # Per-slot mm text below the icon
     mm_text = _mm_text(slot.per_slot_mm)
-    bbox = draw.textbbox((0, 0), mm_text, font=font12)
-    text_w = bbox[2] - bbox[0]
     draw.text(
-        (x + (SLOT_W - text_w) // 2, y + 22 + ICON_SIZE + 4),
+        (x + SLOT_W // 2, y + 20 + ICON_SIZE + 14),
         mm_text,
-        font=font12,
+        font=font14,
         fill=0,
+        anchor="ms",
     )
 
 
@@ -144,10 +130,10 @@ def _draw_section_frame(draw: ImageDraw.ImageDraw):
 
 
 def _draw_verdict(draw: ImageDraw.ImageDraw, nowcast: HomeNowcast):
-    # font18 keeps the verdict on a single line within the 510 px section
-    # while still being larger than the supporting time-to-rain text.
     text = _verdict_text(nowcast)
-    draw.text((SECTION_X + 6, SECTION_Y + 4), text, font=font18, fill=0)
+    draw.text(
+        (SECTION_X + 8, SECTION_Y + 38), text, font=font40, fill=0, anchor="ls"
+    )
 
     minutes = _minutes_to_first_wet(nowcast)
     if minutes is None:
@@ -161,15 +147,16 @@ def _draw_verdict(draw: ImageDraw.ImageDraw, nowcast: HomeNowcast):
         sub = f"約 {hours} 小時後開始"
     if sub:
         draw.text(
-            (SECTION_X + 6, SECTION_Y + 36),
+            (SECTION_X + 8, SECTION_Y + 60),
             sub,
-            font=font14,
+            font=font18,
             fill=0,
+            anchor="ls",
         )
 
 
 def _draw_slots(draw: ImageDraw.ImageDraw, image: Image.Image, nowcast: HomeNowcast):
-    slots_y = SECTION_Y + 68
+    slots_y = SECTION_Y + 66
     for i, slot in enumerate(nowcast.slots[:SLOT_COUNT]):
         x = SECTION_X + i * (SLOT_W + SLOT_GAP)
         _draw_one_slot(draw, image, slot, x, slots_y)
@@ -187,10 +174,11 @@ def render_rainfall_section(image: Image.Image, nowcast: HomeNowcast | None):
 
     if nowcast is None:
         draw.text(
-            (SECTION_X + 6, SECTION_Y + 4),
-            "未來兩小時雨量預報: 暫時無法取得",
-            font=font18,
+            (SECTION_X + 8, SECTION_Y + 44),
+            "未來兩小時雨量預報 暫時無法取得",
+            font=font40,
             fill=0,
+            anchor="ls",
         )
         return
 

@@ -15,6 +15,8 @@ from PIL import Image, ImageDraw
 
 from weather_display import EPD_WIDTH
 from weather_display.lib.render.rainfall import (
+    SECTION_H,
+    SECTION_W,
     SECTION_X,
     SECTION_Y,
     _icon_for,
@@ -114,7 +116,9 @@ def test_render_dry_nowcast_writes_verdict(mock_open, blank_image):
     nowcast = _make_nowcast([0.0, 0.0, 0.0, 0.0])
     render_rainfall_section(blank_image, nowcast)
     mock_open.assert_not_called()
-    crop = blank_image.crop((SECTION_X, SECTION_Y, SECTION_X + 510, SECTION_Y + 130))
+    crop = blank_image.crop(
+        (SECTION_X, SECTION_Y, SECTION_X + SECTION_W, SECTION_Y + SECTION_H)
+    )
     hist = crop.histogram()
     assert hist[0] > 0, "dry section should still draw text, not be blank"
 
@@ -122,7 +126,9 @@ def test_render_dry_nowcast_writes_verdict(mock_open, blank_image):
 @patch("weather_display.lib.render.rainfall.Image.open")
 def test_render_unavailable_draws_error_line(mock_open, blank_image):
     render_rainfall_section(blank_image, None)
-    crop = blank_image.crop((SECTION_X, SECTION_Y, SECTION_X + 510, SECTION_Y + 130))
+    crop = blank_image.crop(
+        (SECTION_X, SECTION_Y, SECTION_X + SECTION_W, SECTION_Y + SECTION_H)
+    )
     hist = crop.histogram()
     assert hist[0] > 0, "unavailable-section should draw the error text"
     mock_open.assert_not_called()

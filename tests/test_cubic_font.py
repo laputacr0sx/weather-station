@@ -39,6 +39,7 @@ def test_fonts_are_valid_truetype():
     from weather_display.assest.font import cubic_font
 
     fonts = [
+        cubic_font.font80,
         cubic_font.font64,
         cubic_font.font48,
         cubic_font.font40,

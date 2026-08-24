@@ -3,6 +3,7 @@ from PIL import ImageFont
 
 CUBIC_FONT_PATH = os.path.join(os.path.dirname(__file__), 'Cubic_11.ttf')
 
+font80 = ImageFont.truetype(CUBIC_FONT_PATH, 80)
 font64 = ImageFont.truetype(CUBIC_FONT_PATH, 64)
 font48 = ImageFont.truetype(CUBIC_FONT_PATH, 48)
 font40 = ImageFont.truetype(CUBIC_FONT_PATH, 40)

@@ -1,5 +1,7 @@
+import argparse
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from PIL import Image, ImageDraw
 from requests import HTTPError
@@ -31,7 +33,18 @@ logging.basicConfig(
 )
 
 
-def main():
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Render the weather dashboard")
+    parser.add_argument(
+        "--save",
+        metavar="PATH",
+        help="Write a live PNG instead of showing the EPD or a preview window",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)
     try:
         logging.info('Gathering System Information')
 
@@ -91,9 +104,15 @@ def main():
 
         logging.info('Rendering Process Finished')
 
-        logging.info('Display Image')
-        present(main_image)
-        logging.info('Displaying Image Success')
+        if args.save:
+            path = Path(args.save)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            main_image.save(path)
+            logging.info('Wrote %s', path)
+        else:
+            logging.info('Display Image')
+            present(main_image)
+            logging.info('Displaying Image Success')
     except HTTPError as e:
         logging.error(e)
 
