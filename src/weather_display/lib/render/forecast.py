@@ -2,6 +2,7 @@ from PIL import Image
 from PIL.ImageDraw import ImageDraw
 from weather_display import EPD_WIDTH, PIC_DIR
 from weather_display.assest.font.cubic_font import font12, font24
+from weather_display.lib.render.colors import BLUE, RED, ink
 from weather_display.lib.util.weather_forecast import WeatherForecastData
 
 
@@ -54,8 +55,8 @@ def render_forecast_section(
         draw.text((x1 + 44, y1 + 2), f'{curr_cast.week[2]}', font=font24, fill=0)
 
         # Draw TEMPERATURE text
-        draw.text((x1 + 70, y1 + 28), f'{htemp:.0f}', font=font24, fill=0)
-        draw.text((x1 + 70, y1 + 54), f'{ltemp:.0f}', font=font24, fill=0)
+        draw.text((x1 + 70, y1 + 28), f'{htemp:.0f}', font=font24, fill=ink(RED))
+        draw.text((x1 + 70, y1 + 54), f'{ltemp:.0f}', font=font24, fill=ink(BLUE))
 
         # Draw HUMIDITY text
         draw.text((x1 + icon_offset[0], y1 + 78), f'{lhum:.0f}', font=font12, fill=0)

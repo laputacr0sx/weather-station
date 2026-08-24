@@ -10,6 +10,7 @@ from weather_display.lib.render.footer import render_footer_section
 from weather_display.lib.render.forecast import render_forecast_section
 from weather_display.lib.render.header import render_header_section
 from weather_display.lib.render.rainfall import render_rainfall_section
+from weather_display.lib.render.colors import color_mode_enabled, WHITE
 from weather_display.lib.util.calculate_time import get_record_time_diff
 from weather_display.lib.util.convert_date_string import get_now_str
 from weather_display.lib.util.current_weather import get_current_weather
@@ -77,6 +78,9 @@ def main():
         now_str = get_now_str(now)
 
         logging.info('Generating Image')
+        if color_mode_enabled():
+        main_image = Image.new('RGB', (EPD_WIDTH, EPD_HEIGHT), WHITE)
+    else:
         main_image = Image.new('1', (EPD_WIDTH, EPD_HEIGHT), 255)
 
         logging.info('Drawing Image')

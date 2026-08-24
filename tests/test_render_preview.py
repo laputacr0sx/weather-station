@@ -91,6 +91,7 @@ except ImportError:
     pass
 
 from weather_display import EPD_HEIGHT, EPD_WIDTH
+from weather_display.lib.render import colors
 from weather_display.lib.render.dashboard import render_minor_dashboard
 from weather_display.lib.render.footer import render_footer_section
 from weather_display.lib.render.forecast import render_forecast_section
@@ -102,6 +103,12 @@ from weather_display.lib.util.convert_date_string import get_now_str
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "dashboard_preview.png")
 
+# 6-color palette of the epd7in3e driver (black, white, green, blue, red,
+# yellow) - used to verify semantic colors survive panel quantization.
+EPD7IN3E_PALETTE = (
+    0, 0, 0, 255, 255, 255, 0, 255, 0, 0, 0, 255, 255, 0, 0, 255, 255, 0
+)
+
 
 # --- fixtures ---------------------------------------------------------------
 def _weather():
@@ -109,7 +116,7 @@ def _weather():
         icon=[50],
         temperature=SimpleNamespace(
             record_time=datetime(2026, 8, 24, 10, 30),
-            data=[SimpleNamespace(value=28.3, place="Hong Kong", unit="C")],
+            data=[SimpleNamespace(value=31.4, place="Hong Kong", unit="C")],
         ),
     )
 
@@ -125,7 +132,7 @@ def _forecast():
         weather_forecast=[
             SimpleNamespace(
                 forecast_maxtemp=SimpleNamespace(value=31.0),
-                forecast_mintemp=SimpleNamespace(value=26.0),
+                forecast_mintemp=SimpleNamespace(value=14.0),
                 forecast_maxrh=SimpleNamespace(value=90.0),
                 forecast_minrh=SimpleNamespace(value=70.0),
                 forecast_icon=icons[i],
@@ -192,16 +199,25 @@ def stubbed_charts():
         yield
 
 
-def test_render_full_dashboard_to_png(stubbed_charts):
-    """Render every section to a single 800x480 image and save it.
+@pytest.fixture
+def color_mode(monkeypatch):
+    """Enable color mode (WEATHER_DISPLAY_COLOR=1) and reset the cache after."""
+    monkeypatch.setenv("WEATHER_DISPLAY_COLOR", "1")
+    colors._COLOR_MODE = True
+    yield
+    colors._COLOR_MODE = None
 
-    Mirrors run.main() but without the EPD hardware or any network call.
-    """
-    now = datetime.now()
+
+def _render_dashboard(now: datetime):
+    """Render every section onto a fresh canvas, as run.main() does."""
     weather = _weather()
     time_diff = get_record_time_diff(now, weather.temperature.record_time)
 
-    main_image = Image.new("1", (EPD_WIDTH, EPD_HEIGHT), 255)
+    if colors.color_mode_enabled():
+        main_image = Image.new("RGB", (EPD_WIDTH, EPD_HEIGHT), colors.WHITE)
+    else:
+        main_image = Image.new("1", (EPD_WIDTH, EPD_HEIGHT), 255)
+
     draw = ImageDraw(main_image)
 
     render_header_section(
@@ -211,14 +227,49 @@ def test_render_full_dashboard_to_png(stubbed_charts):
     render_rainfall_section(main_image)
     render_minor_dashboard(_wind(), _uv(), _sun(), draw, main_image)
     render_footer_section(draw, time_diff, now)
+    return main_image
 
-    # The image must be the right size and contain *some* black pixels
-    # (all-white would mean nothing was actually drawn).
+
+def test_render_full_dashboard_to_png_bw(stubbed_charts):
+    """B/W mode: 1-bit image, all-black drawing - the original behavior."""
+    colors._COLOR_MODE = None
+    now = datetime.now()
+    main_image = _render_dashboard(now)
+
+    assert main_image.mode == "1"
     assert main_image.size == (EPD_WIDTH, EPD_HEIGHT)
     histogram = main_image.histogram()
     assert histogram[0] > 0, "dashboard rendered blank - no black pixels drawn"
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    preview_path = os.path.join(OUTPUT_DIR, "dashboard_preview_bw.png")
+    main_image.save(preview_path)
+    assert os.path.getsize(preview_path) > 0
+
+
+def test_render_full_dashboard_to_png_color(stubbed_charts, color_mode):
+    """Color mode: RGB image with semantic colors surviving panel quantization."""
+    now = datetime.now()
+    main_image = _render_dashboard(now)
+
+    assert main_image.mode == "RGB"
+    assert main_image.size == (EPD_WIDTH, EPD_HEIGHT)
+
+    colors_found = _quantized_colors(main_image)
+    for name, rgb in {"red": (255, 0, 0), "blue": (0, 0, 255), "green": (0, 255, 0)}.items():
+        assert rgb in colors_found, (
+            f"quantized preview lacks {name} pixels - semantic color lost "
+            f"(found: {sorted(colors_found)})"
+        )
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     main_image.save(OUTPUT_PATH)
-    assert os.path.exists(OUTPUT_PATH)
     assert os.path.getsize(OUTPUT_PATH) > 0
+
+
+def _quantized_colors(image: Image.Image) -> set:
+    """Quantize like epd7in3e.getbuffer() and return the set of colors present."""
+    pal_image = Image.new("P", (1, 1))
+    pal_image.putpalette(EPD7IN3E_PALETTE + (0, 0, 0) * 250)
+    quantized = image.convert("RGB").quantize(palette=pal_image).convert("RGB")
+    return {c[1] for c in quantized.getcolors(maxcolors=8)}

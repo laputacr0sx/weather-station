@@ -3,6 +3,7 @@ import os
 from PIL import Image, ImageDraw
 from weather_display import PIC_DIR
 from weather_display.assest.font.cubic_font import font12, font14, font32
+from weather_display.lib.render.colors import uv_ink
 from weather_display.lib.util.sun import SunStatus
 from weather_display.lib.util.uv_index import UVIndex
 from weather_display.lib.util.wind import WindData
@@ -22,12 +23,14 @@ def render_minor_dashboard(
                 'name': f'{wind.station}風速',
                 'data': f'{wind.avg_wind_speed}',
                 'unit': f'{wind.wind_direction}',
+                'data_fill': 0,
             },
             {
                 'icon_uri': 'sunrise.png',
                 'name': '日出時間',
                 'data': sun.rise,
                 'unit': None,
+                'data_fill': 0,
             },
         ],
         [
@@ -37,12 +40,14 @@ def render_minor_dashboard(
                 # "data": weather.uvindex.data[0].value,
                 'data': uv.uv_index,
                 'unit': f"@{uv.datetime.strftime("%H:%M")}",
+                'data_fill': uv_ink(uv.uv_index),
             },
             {
                 'icon_uri': 'sunset.png',
                 'name': '日落時間',
                 'data': sun.set,
                 'unit': None,
+                'data_fill': 0,
             },
         ],
     ]
@@ -68,7 +73,7 @@ def render_minor_dashboard(
             data_length = len(data) if type(data) is str else len(str(abs(data)))
 
             draw.text((x1 + 48, y1), f'{name}', font=font12, fill=0)
-            draw.text((x1 + 48, y1 + 16), f'{data}', font=font32, fill=0)
+            draw.text((x1 + 48, y1 + 16), f'{data}', font=font32, fill=cell['data_fill'])
             draw.text(
                 (x1 + 48 + data_length * 14 + 4, y1 + cell_height - 30),
                 unit,

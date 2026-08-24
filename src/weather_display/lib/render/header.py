@@ -11,6 +11,7 @@ from weather_display.assest.font.cubic_font import (
     font48,
     font64,
 )
+from weather_display.lib.render.colors import BLUE, ink, temperature_ink
 from weather_display.lib.util.current_weather import CurrentWeather
 from weather_display.lib.util.env_sensor import EnvironmentData
 from weather_display.lib.util.gregorian import GregorianDate
@@ -109,14 +110,16 @@ def major_weather(weather, humidity, image, draw: ImageDraw.ImageDraw):
     # print(temperature_boundingbox)
 
     # Render temperature
+    temp_ink = temperature_ink(weather.temperature.data[0].value)
     draw.text(
-        (278, 2), f'{weather.temperature.data[0].value:.00f}', font=font64, fill=0
+        (278, 2), f'{weather.temperature.data[0].value:.00f}', font=font64, fill=temp_ink
     )
-    draw.text((temperature_boundingbox[2] + 2, 14), 'o', font=font18, fill=0)
-    draw.text((temperature_boundingbox[2] + 10, 17), 'C', font=font48, fill=0)
+    draw.text((temperature_boundingbox[2] + 2, 14), 'o', font=font18, fill=temp_ink)
+    draw.text((temperature_boundingbox[2] + 10, 17), 'C', font=font48, fill=temp_ink)
     # Render humidity
-    draw.text((278, 68), f'{humidity.humidity}', font=font48, fill=0)
-    draw.text((humidity_bb[2], 82), '%', font=font32, fill=0)
+    hum_ink = ink(BLUE)
+    draw.text((278, 68), f'{humidity.humidity}', font=font48, fill=hum_ink)
+    draw.text((humidity_bb[2], 82), '%', font=font32, fill=hum_ink)
 
 
 def inhouse_weather(env: EnvironmentData, draw: ImageDraw.ImageDraw):
@@ -215,9 +218,10 @@ def inhouse_weather(env: EnvironmentData, draw: ImageDraw.ImageDraw):
 
     # Drawing Temperature & Humidity Text
     degree_pos = (left_wall[0] + 2, left_ground[1] - 70)
-    draw.text(degree_pos, f'{env.temperature:.01f}', font=font40, fill=0)
-    draw.text((degree_pos[0] + 84, degree_pos[1] + 14), 'o', font=font12, fill=0)
-    draw.text((degree_pos[0] + 90, degree_pos[1] + 15), 'C', font=font24, fill=0)
+    indoor_temp_ink = temperature_ink(env.temperature)
+    draw.text(degree_pos, f'{env.temperature:.01f}', font=font40, fill=indoor_temp_ink)
+    draw.text((degree_pos[0] + 84, degree_pos[1] + 14), 'o', font=font12, fill=indoor_temp_ink)
+    draw.text((degree_pos[0] + 90, degree_pos[1] + 15), 'C', font=font24, fill=indoor_temp_ink)
 
     humidity_pos = (left_ground[0] + 4, left_ground[1] - 26)
     inhouse_humidity_bb = draw.textbbox(
@@ -235,5 +239,5 @@ def inhouse_weather(env: EnvironmentData, draw: ImageDraw.ImageDraw):
         font_size=None,
     )
 
-    draw.text(humidity_pos, f'{env.humidity:0.1f}', font=font24, fill=0)
-    draw.text((inhouse_humidity_bb[2], humidity_pos[1] + 11), '%', font=font12, fill=0)
+    draw.text(humidity_pos, f'{env.humidity:0.1f}', font=font24, fill=ink(BLUE))
+    draw.text((inhouse_humidity_bb[2], humidity_pos[1] + 11), '%', font=font12, fill=ink(BLUE))
