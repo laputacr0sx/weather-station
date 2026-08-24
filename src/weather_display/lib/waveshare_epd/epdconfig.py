@@ -134,7 +134,7 @@ class RaspberryPi:
                     self.DEV_SPI = CDLL(so_filename)
                     break
             if self.DEV_SPI is None:
-                RuntimeError('Cannot find DEV_Config.so')
+                raise RuntimeError('Cannot find DEV_Config.so')
 
             self.DEV_SPI.DEV_Module_Init()
 
