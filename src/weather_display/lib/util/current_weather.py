@@ -102,7 +102,7 @@ def parse_current_weather(json_data: dict) -> CurrentWeather:
         end_time=datetime.fromisoformat(json_data["rainfall"]["endTime"]),
     )
 
-    if type(json_data["uvindex"] is str):
+    if isinstance(json_data["uvindex"], str):
         uvindex = Uvindex(data=[], record_desc="")
     else:
         uvindex_data = [
