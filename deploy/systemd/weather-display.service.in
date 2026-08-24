@@ -1,0 +1,16 @@
+[Unit]
+Description=Weather station e-paper refresh
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=__REPO__
+Environment=PYTHONPATH=__REPO__/src
+RuntimeDirectory=weather-display
+ExecStart=/usr/bin/flock -n /run/weather-display/lock __PYTHON__ -m weather_display.run
+TimeoutStartSec=180
+Nice=10
+StandardOutput=journal
+StandardError=journal

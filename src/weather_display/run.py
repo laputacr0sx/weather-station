@@ -13,6 +13,7 @@ from weather_display.lib.render.rainfall import render_rainfall_section
 from weather_display.lib.util.calculate_time import get_record_time_diff
 from weather_display.lib.util.convert_date_string import get_now_str
 from weather_display.lib.util.current_weather import get_current_weather
+from weather_display.lib.util.display_backend import present
 from weather_display.lib.util.env_sensor import EnvironmentData
 from weather_display.lib.util.gregorian import get_gregorian_date
 from weather_display.lib.util.humidity import get_humidity_data
@@ -22,26 +23,16 @@ from weather_display.lib.util.uv_index import get_uv_data
 from weather_display.lib.util.weather_forecast import get_weather_forecast
 from weather_display.lib.util.wind import get_wind_data
 
-# from weather_display.lib.waveshare_epd import epd7in5_V2
-
 
 logging.basicConfig(
-    filename='./error.log',  # Log file name
-    level=logging.DEBUG,  # Log level
-    format='%(asctime)s\t[%(levelname)s]\t%(message)s',  # Log format
-    datefmt='%Y-%m-%d %H:%M:%S',  # Date format
+    level=logging.INFO,
+    format='%(asctime)s\t[%(levelname)s]\t%(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
 )
 
 
 def main():
     try:
-        # logging.info("Initiate EPD7in5")
-        # epd = epd7in5_V2.EPD()
-
-        # logging.info("init and Clear")
-        # epd.init()
-        # epd.Clear()
-
         logging.info('Gathering System Information')
 
         logging.info('Reading from BME280')
@@ -101,11 +92,7 @@ def main():
         logging.info('Rendering Process Finished')
 
         logging.info('Display Image')
-        main_image.show()
-        # epd.display(epd.getbuffer(main_image))
-        #
-        # epd.sleep()
-
+        present(main_image)
         logging.info('Displaying Image Success')
     except HTTPError as e:
         logging.error(e)
