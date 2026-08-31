@@ -5,14 +5,20 @@ Full-width band under the 5-day forecast, sized to be glanceable from ~4 m:
   1. Verdict (font40) - "is it going to rain in the next 2 hours?"
   2. Time-to-rain (font18)
   3. Four half-hour slots: 24-hour clock (font18), 48px icon, mm (font14)
+
+When the warning strip is on, pass ``COMPACT_RAINFALL`` so this band sits
+under the strip and ends on the same baseline as the quiet layout.
 """
+from __future__ import annotations
+
 import os
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from PIL import Image, ImageDraw
 
 from weather_display import PIC_DIR
-from weather_display.assest.font.cubic_font import font14, font18, font40
+from weather_display.assest.font.cubic_font import font14, font18, font32, font40
 from weather_display.lib.util.rainfall_nowcast import HomeNowcast, NowcastSlot
 
 SECTION_X = 8
@@ -24,6 +30,40 @@ SLOT_COUNT = 4
 SLOT_GAP = 12
 SLOT_W = (SECTION_W - SLOT_GAP * (SLOT_COUNT - 1)) // SLOT_COUNT
 ICON_SIZE = 48
+
+
+@dataclass(frozen=True)
+class RainfallLayout:
+    x: int = SECTION_X
+    y: int = SECTION_Y
+    w: int = SECTION_W
+    h: int = SECTION_H
+    icon_size: int = ICON_SIZE
+    verdict_dy: int = 38
+    sub_dy: int = 60
+    slots_dy: int = 66
+    slot_time_dy: int = 14
+    slot_icon_dy: int = 20
+    slot_mm_gap: int = 14
+    compact: bool = False
+
+
+QUIET_RAINFALL = RainfallLayout()
+
+# Strip is y=232..282 plus a 6px white gap, so this band starts at 288.
+# Keep the quiet bottom edge (392) so the wind/UV row does not move.
+COMPACT_RAINFALL = RainfallLayout(
+    y=288,
+    h=104,
+    icon_size=32,
+    verdict_dy=28,
+    sub_dy=44,
+    slots_dy=49,
+    slot_time_dy=11,
+    slot_icon_dy=13,
+    slot_mm_gap=10,
+    compact=True,
+)
 
 
 # Severity thresholds in mm per 30 min. These bracket the official HKO
@@ -93,26 +133,34 @@ def _draw_one_slot(
     slot: NowcastSlot,
     x: int,
     y: int,
+    layout: RainfallLayout,
 ):
     # Time label centred in the cell
     time_text = _slot_label(slot)
     cx = x + SLOT_W // 2
-    draw.text((cx, y + 14), time_text, font=font18, fill=0, anchor="ms")
+    draw.text(
+        (cx, y + layout.slot_time_dy),
+        time_text,
+        font=font14 if layout.compact else font18,
+        fill=0,
+        anchor="ms",
+    )
 
     # Icon centred below the time label
     icon_name = _icon_for(slot.per_slot_mm)
+    icon_size = layout.icon_size
     if icon_name:
         try:
             icon = Image.open(os.path.join(PIC_DIR, icon_name)).convert("1")
-            icon = icon.resize((ICON_SIZE, ICON_SIZE))
-            image.paste(icon, (x + (SLOT_W - ICON_SIZE) // 2, y + 20))
+            icon = icon.resize((icon_size, icon_size))
+            image.paste(icon, (x + (SLOT_W - icon_size) // 2, y + layout.slot_icon_dy))
         except FileNotFoundError:
             pass  # icon missing - cell just shows the time, no crash
 
     # Per-slot mm text below the icon
     mm_text = _mm_text(slot.per_slot_mm)
     draw.text(
-        (x + SLOT_W // 2, y + 20 + ICON_SIZE + 14),
+        (x + SLOT_W // 2, y + layout.slot_icon_dy + icon_size + layout.slot_mm_gap),
         mm_text,
         font=font14,
         fill=0,
@@ -120,19 +168,25 @@ def _draw_one_slot(
     )
 
 
-def _draw_section_frame(draw: ImageDraw.ImageDraw):
+def _draw_section_frame(draw: ImageDraw.ImageDraw, layout: RainfallLayout):
     """Light bounding rectangle around the rainfall panel."""
     draw.rectangle(
-        (SECTION_X, SECTION_Y, SECTION_X + SECTION_W, SECTION_Y + SECTION_H),
+        (layout.x, layout.y, layout.x + layout.w, layout.y + layout.h),
         outline=0,
         width=1,
     )
 
 
-def _draw_verdict(draw: ImageDraw.ImageDraw, nowcast: HomeNowcast):
+def _draw_verdict(
+    draw: ImageDraw.ImageDraw, nowcast: HomeNowcast, layout: RainfallLayout
+):
     text = _verdict_text(nowcast)
     draw.text(
-        (SECTION_X + 8, SECTION_Y + 38), text, font=font40, fill=0, anchor="ls"
+        (layout.x + 8, layout.y + layout.verdict_dy),
+        text,
+        font=font32 if layout.compact else font40,
+        fill=0,
+        anchor="ls",
     )
 
     minutes = _minutes_to_first_wet(nowcast)
@@ -147,40 +201,50 @@ def _draw_verdict(draw: ImageDraw.ImageDraw, nowcast: HomeNowcast):
         sub = f"約 {hours} 小時後開始"
     if sub:
         draw.text(
-            (SECTION_X + 8, SECTION_Y + 60),
+            (layout.x + 8, layout.y + layout.sub_dy),
             sub,
-            font=font18,
+            font=font14 if layout.compact else font18,
             fill=0,
             anchor="ls",
         )
 
 
-def _draw_slots(draw: ImageDraw.ImageDraw, image: Image.Image, nowcast: HomeNowcast):
-    slots_y = SECTION_Y + 66
+def _draw_slots(
+    draw: ImageDraw.ImageDraw,
+    image: Image.Image,
+    nowcast: HomeNowcast,
+    layout: RainfallLayout,
+):
+    slots_y = layout.y + layout.slots_dy
     for i, slot in enumerate(nowcast.slots[:SLOT_COUNT]):
-        x = SECTION_X + i * (SLOT_W + SLOT_GAP)
-        _draw_one_slot(draw, image, slot, x, slots_y)
+        x = layout.x + i * (SLOT_W + SLOT_GAP)
+        _draw_one_slot(draw, image, slot, x, slots_y, layout)
 
 
-def render_rainfall_section(image: Image.Image, nowcast: HomeNowcast | None):
+def render_rainfall_section(
+    image: Image.Image,
+    nowcast: HomeNowcast | None,
+    layout: RainfallLayout | None = None,
+):
     """Draw the rainfall-nowcast panel onto ``image``.
 
     If ``nowcast`` is ``None`` (network or parse failure), the section is
     filled with a single "nowcast unavailable" line - blanking the
     section is worse than admitting we don't have data.
     """
+    layout = layout or QUIET_RAINFALL
     draw = ImageDraw.Draw(image)
-    _draw_section_frame(draw)
+    _draw_section_frame(draw, layout)
 
     if nowcast is None:
         draw.text(
-            (SECTION_X + 8, SECTION_Y + 44),
+            (layout.x + 8, layout.y + 44 if layout.h >= 150 else layout.y + 28),
             "未來兩小時雨量預報 暫時無法取得",
-            font=font40,
+            font=font32 if layout.compact else font40,
             fill=0,
             anchor="ls",
         )
         return
 
-    _draw_verdict(draw, nowcast)
-    _draw_slots(draw, image, nowcast)
+    _draw_verdict(draw, nowcast, layout)
+    _draw_slots(draw, image, nowcast, layout)

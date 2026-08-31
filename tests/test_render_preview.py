@@ -22,10 +22,19 @@ from weather_display.lib.render.dashboard import render_minor_dashboard
 from weather_display.lib.render.footer import render_footer_section
 from weather_display.lib.render.forecast import render_forecast_section
 from weather_display.lib.render.header import render_header_section
-from weather_display.lib.render.rainfall import render_rainfall_section
+from weather_display.lib.render.rainfall import COMPACT_RAINFALL, render_rainfall_section
+from weather_display.lib.render.warnings import (
+    STRIP_H,
+    STRIP_W,
+    STRIP_X,
+    STRIP_Y,
+    layout_strip,
+    render_warning_strip,
+)
 from weather_display.lib.util.calculate_time import get_record_time_diff
 from weather_display.lib.util.convert_date_string import get_now_str
 from weather_display.lib.util.rainfall_nowcast import HomeNowcast, NowcastSlot
+from weather_display.lib.util.warnings import WarningStrip, parse_warnsum
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "dashboard_preview.png")
@@ -106,11 +115,7 @@ def _nowcast_wet():
     return HomeNowcast(base_at=base, lat=22.43, lon=114.221, slots=slots)
 
 
-def test_render_full_dashboard_to_png():
-    """Render every section to a single 800x480 image and save it.
-
-    Mirrors run.main() but without the EPD hardware or any network call.
-    """
+def _render_dashboard(warning_strip: WarningStrip | None = None) -> Image.Image:
     now = datetime.now()
     weather = _weather()
     time_diff = get_record_time_diff(now, weather.temperature.record_time)
@@ -122,9 +127,22 @@ def test_render_full_dashboard_to_png():
         _greg(), weather, _humidity(), "沙田馬鞍山", get_now_str(now), draw, main_image, _env()
     )
     render_forecast_section(_forecast(), draw, main_image)
-    render_rainfall_section(main_image, _nowcast_wet())
+    rainfall_layout = None
+    if warning_strip is not None and render_warning_strip(main_image, warning_strip):
+        rainfall_layout = COMPACT_RAINFALL
+    render_rainfall_section(main_image, _nowcast_wet(), rainfall_layout)
     render_minor_dashboard(_wind(), _uv(), _sun(), draw, main_image)
     render_footer_section(draw, time_diff, now)
+    return main_image
+
+
+def test_render_full_dashboard_to_png():
+    """Render every section to a single 800x480 image and save it.
+
+    Mirrors run.main() but without the EPD hardware or any network call.
+    Quiet-day path: no warning strip, rainfall at the original y=242 band.
+    """
+    main_image = _render_dashboard()
 
     assert main_image.size == (EPD_WIDTH, EPD_HEIGHT)
     histogram = main_image.histogram()
@@ -134,3 +152,125 @@ def test_render_full_dashboard_to_png():
     main_image.save(OUTPUT_PATH)
     assert os.path.exists(OUTPUT_PATH)
     assert os.path.getsize(OUTPUT_PATH) > 0
+
+
+def _strip_is_inverted(image: Image.Image) -> bool:
+    """The warning bar is a black rectangle; most pixels in it must be ink."""
+    crop = image.crop((STRIP_X, STRIP_Y, STRIP_X + STRIP_W, STRIP_Y + STRIP_H))
+    hist = crop.histogram()
+    return hist[0] > hist[255]
+
+
+def test_render_two_warnings_and_tip_to_png():
+    """Today-shaped case: 黃雨 + 雷暴 + a pre-signal tip."""
+    chips = parse_warnsum(
+        {
+            "WRAIN": {
+                "name": "暴雨警告信號",
+                "code": "WRAINA",
+                "type": "黃色",
+                "actionCode": "ISSUE",
+            },
+            "WTS": {
+                "name": "雷暴警告",
+                "code": "WTS",
+                "actionCode": "ISSUE",
+            },
+        }
+    )
+    strip = WarningStrip(chips=chips, tip="黃昏或考慮發出一號")
+    image = _render_dashboard(strip)
+    assert _strip_is_inverted(image)
+    path = os.path.join(OUTPUT_DIR, "dashboard_preview_warnings.png")
+    image.save(path)
+    assert os.path.getsize(path) > 0
+
+
+def test_render_six_warnings_to_png():
+    """Typhoon-day overlap: six chips, no wrap, tip yields to the chips."""
+    chips = parse_warnsum(
+        {
+            "WTCSGNL": {
+                "name": "熱帶氣旋警告信號",
+                "code": "TC8NE",
+                "actionCode": "ISSUE",
+            },
+            "WRAIN": {
+                "name": "暴雨警告信號",
+                "code": "WRAINB",
+                "type": "黑色",
+                "actionCode": "ISSUE",
+            },
+            "WTS": {"name": "雷暴警告", "code": "WTS", "actionCode": "ISSUE"},
+            "WL": {"name": "山泥傾瀉警告", "code": "WL", "actionCode": "ISSUE"},
+            "WFNTSA": {
+                "name": "新界北部水浸特別報告",
+                "code": "WFNTSA",
+                "actionCode": "ISSUE",
+            },
+            "WMSGNL": {
+                "name": "強烈季候風信號",
+                "code": "WMSGNL",
+                "actionCode": "ISSUE",
+            },
+        }
+    )
+    strip = WarningStrip(
+        chips=chips,
+        tip="沙德爾殘餘靠近，黃昏或考慮發出一號戒備信號",
+    )
+    packed = layout_strip(strip)
+    assert packed.show_labels is True
+    assert packed.tip is None
+    image = _render_dashboard(strip)
+    assert _strip_is_inverted(image)
+    path = os.path.join(OUTPUT_DIR, "dashboard_preview_warnings_six.png")
+    image.save(path)
+    assert os.path.getsize(path) > 0
+
+
+def test_render_eight_warnings_icons_only_to_png():
+    """Synthetic overflow: eight chips drop labels rather than wrap."""
+    chips = parse_warnsum(
+        {
+            "WTCSGNL": {
+                "name": "熱帶氣旋警告信號",
+                "code": "TC8NE",
+                "actionCode": "ISSUE",
+            },
+            "WRAIN": {
+                "name": "暴雨警告信號",
+                "code": "WRAINB",
+                "type": "黑色",
+                "actionCode": "ISSUE",
+            },
+            "WTS": {"name": "雷暴警告", "code": "WTS", "actionCode": "ISSUE"},
+            "WL": {"name": "山泥傾瀉警告", "code": "WL", "actionCode": "ISSUE"},
+            "WFNTSA": {
+                "name": "新界北部水浸特別報告",
+                "code": "WFNTSA",
+                "actionCode": "ISSUE",
+            },
+            "WMSGNL": {
+                "name": "強烈季候風信號",
+                "code": "WMSGNL",
+                "actionCode": "ISSUE",
+            },
+            "WHOT": {"name": "酷熱天氣警告", "code": "WHOT", "actionCode": "ISSUE"},
+            "WFIRE": {
+                "name": "火災危險警告",
+                "code": "WFIRER",
+                "actionCode": "ISSUE",
+            },
+        }
+    )
+    strip = WarningStrip(chips=chips, tip="will not fit")
+    packed = layout_strip(strip)
+    assert packed.show_labels is False
+    assert packed.tip is None
+    assert len(packed.chips) == 8
+    image = _render_dashboard(strip)
+    assert _strip_is_inverted(image)
+    path = os.path.join(OUTPUT_DIR, "dashboard_preview_warnings_eight.png")
+    image.save(path)
+    assert os.path.getsize(path) > 0
