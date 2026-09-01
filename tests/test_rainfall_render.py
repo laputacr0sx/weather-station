@@ -35,6 +35,7 @@ from weather_display.lib.render.rainfall import (
     _when_text,
     render_rainfall_section,
 )
+from weather_display.lib.util.hourly_rainfall import HourlyRainfall
 from weather_display.lib.util.rainfall_nowcast import HomeNowcast, NowcastSlot
 
 
@@ -123,6 +124,16 @@ def test_verdict_torrential_says_torrential():
 
 def test_when_text_dry_says_ok_to_go_out():
     assert _when_text(_make_nowcast([0.0, 0.0, 0.0, 0.0])) == "適合外出"
+
+
+def test_when_text_uses_observed_rain_not_nowcast_window():
+    observed = HourlyRainfall("沙田", "RF020", 2.0, datetime(2026, 9, 1, 10, 45))
+    assert "過去1小時" in _when_text(_make_nowcast([0.0, 0.0, 0.0, 0.0]), observed)
+
+
+def test_verdict_observed_wet_nowcast_dry():
+    observed = HourlyRainfall("沙田", "RF020", 1.0, datetime(2026, 9, 1, 10, 45))
+    assert "正在下雨" in _verdict_text(_make_nowcast([0.0, 0.0, 0.0, 0.0]), observed)
 
 
 def test_mm_text_keeps_fractional_wet_amounts():

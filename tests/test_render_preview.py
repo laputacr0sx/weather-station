@@ -33,6 +33,7 @@ from weather_display.lib.render.warnings import (
 )
 from weather_display.lib.util.calculate_time import get_record_time_diff
 from weather_display.lib.util.convert_date_string import get_now_str
+from weather_display.lib.util.hourly_rainfall import HourlyRainfall
 from weather_display.lib.util.rainfall_nowcast import HomeNowcast, NowcastSlot
 from weather_display.lib.util.warnings import WarningStrip, parse_warnsum
 
@@ -132,7 +133,10 @@ def _render_dashboard(warning_strip: WarningStrip | None = None) -> Image.Image:
     rainfall_layout = None
     if warning_strip is not None and render_warning_strip(main_image, warning_strip):
         rainfall_layout = COMPACT_RAINFALL
-    render_rainfall_section(main_image, _nowcast_wet(), rainfall_layout)
+    observed = HourlyRainfall("沙田", "RF020", 2.0, datetime(2026, 9, 1, 10, 45))
+    render_rainfall_section(
+        main_image, _nowcast_wet(), rainfall_layout, observed=observed
+    )
     render_minor_dashboard(_wind(), _uv(), _sun(), draw, main_image)
     render_footer_section(draw, time_diff, now)
     return main_image

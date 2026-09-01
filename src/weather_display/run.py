@@ -20,6 +20,7 @@ from weather_display.lib.util.display_backend import present
 from weather_display.lib.util.env_sensor import EnvironmentData
 from weather_display.lib.util.gregorian import get_gregorian_date
 from weather_display.lib.util.humidity import get_humidity_data
+from weather_display.lib.util.hourly_rainfall import get_home_hourly_rainfall
 from weather_display.lib.util.rainfall_nowcast import get_home_nowcast
 from weather_display.lib.util.sun import get_sun_status
 from weather_display.lib.util.uv_index import get_uv_data
@@ -86,6 +87,16 @@ def main(argv=None):
         else:
             logging.info('Home nowcast GOT! peak=%.2fmm/30min' % nowcast.peak_per_slot_mm)
 
+        observed = get_home_hourly_rainfall()
+        if observed.mm is None:
+            logging.warning('Sha Tin hourly rainfall unavailable')
+        else:
+            logging.info(
+                'Sha Tin hourly rain GOT! %.1fmm at %s',
+                observed.mm,
+                observed.obs_time,
+            )
+
         warning_strip = get_warning_strip()
         if warning_strip.active:
             logging.info(
@@ -113,7 +124,9 @@ def main(argv=None):
         rainfall_layout = None
         if render_warning_strip(main_image, warning_strip):
             rainfall_layout = COMPACT_RAINFALL
-        render_rainfall_section(main_image, nowcast, rainfall_layout)
+        render_rainfall_section(
+            main_image, nowcast, rainfall_layout, observed=observed
+        )
         render_minor_dashboard(wind, uv, sun, draw, main_image)
         render_footer_section(draw, time_diff, now)
 

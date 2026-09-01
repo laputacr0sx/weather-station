@@ -5,7 +5,8 @@ by elders and children:
 
   1. Action (font40) left - "bring an umbrella?" / "no rain"
   2. Timing (font18) right - when the first wet slot starts
-  3. Four half-hour rain gauges: 24-hour clock, cup fill, 無/小/中/大/暴
+  3. Five rain gauges: Sha Tin past-hour 現況, a vertical divider, then
+     four half-hour nowcast cups (clock, fill, 無/小/中/大/暴)
 
 The cup and the word answer different questions. The word is a class
 (should I worry?). The cup is amount (how wet is this half hour?),
@@ -22,6 +23,7 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw
 
 from weather_display.assest.font.cubic_font import font14, font18, font24, font32, font40
+from weather_display.lib.util.hourly_rainfall import HourlyRainfall
 from weather_display.lib.util.rainfall_nowcast import HomeNowcast, NowcastSlot
 
 SECTION_X = 8
@@ -30,8 +32,8 @@ SECTION_W = 784
 SECTION_H = 150
 
 SLOT_COUNT = 4
-SLOT_GAP = 16
-SLOT_W = (SECTION_W - SLOT_GAP * (SLOT_COUNT - 1)) // SLOT_COUNT
+SLOT_GAP = 12
+NOW_CAPTION = "現況"
 
 # Slot values are millimetres in 30 minutes, not mm/h.
 #
@@ -61,11 +63,13 @@ class RainfallLayout:
     w: int = SECTION_W
     h: int = SECTION_H
     compact: bool = False
+    now_col_w: int = 136
+    divider_gap: int = 16
     verdict_dy: int = 34
     slots_dy: int = 44
     slot_time_dy: int = 14
     gauge_dy: int = 22
-    gauge_w: int = 48
+    gauge_w: int = 44
     gauge_h: int = 50
     label_dy: int = 90
 
@@ -78,11 +82,13 @@ COMPACT_RAINFALL = RainfallLayout(
     y=288,
     h=104,
     compact=True,
+    now_col_w=112,
+    divider_gap=12,
     verdict_dy=24,
     slots_dy=32,
     slot_time_dy=12,
     gauge_dy=16,
-    gauge_w=32,
+    gauge_w=30,
     gauge_h=34,
     label_dy=66,
 )
@@ -119,9 +125,17 @@ def _gauge_fill_ratio(per_slot_mm: float) -> float:
     return min(1.0, max(GAUGE_MIN_WET_RATIO, ratio))
 
 
-def _verdict_text(nowcast: HomeNowcast) -> str:
+def _verdict_text(
+    nowcast: HomeNowcast | None, observed: HourlyRainfall | None = None
+) -> str:
     """One-line Chinese action for the left side of the header row."""
+    if nowcast is None:
+        if observed is not None and observed.is_wet:
+            return "沙田過去一小時有雨"
+        return "未來兩小時雨量預報 暫時無法取得"
     if nowcast.is_dry:
+        if observed is not None and observed.is_wet:
+            return "正在下雨，稍後無雨"
         return "未來兩小時無雨"
     peak = nowcast.peak_per_slot_mm
     if peak >= 15.0:
@@ -131,13 +145,19 @@ def _verdict_text(nowcast: HomeNowcast) -> str:
     return "未來兩小時有雨，請帶傘"
 
 
-def _when_text(nowcast: HomeNowcast) -> str:
-    """Right-side timing: when the first wet slot starts, or a dry cue."""
+def _when_text(
+    nowcast: HomeNowcast | None, observed: HourlyRainfall | None = None
+) -> str:
+    """Right-side status: observed past hour first, else nowcast timing."""
+    if observed is not None and observed.is_wet:
+        return "沙田過去1小時有雨"
+    if nowcast is None:
+        return ""
     minutes = _minutes_to_first_wet(nowcast)
     if minutes is None:
         return "適合外出" if nowcast.is_dry else ""
     if minutes == 0:
-        return "正在下雨"
+        return "這半小時將有雨"
     if minutes < 60:
         return f"約 {minutes} 分鐘後開始"
     hours = minutes // 60
@@ -147,9 +167,7 @@ def _when_text(nowcast: HomeNowcast) -> str:
 def _minutes_to_first_wet(nowcast: HomeNowcast) -> int | None:
     """Minutes from now until the start of the first wet 30-min slot.
 
-    Each CSV value is rainfall accumulated through ``ended_at``, so the
-    slot itself covers the 30 minutes before that. If that start time
-    has already passed, returns 0 to convey "rain is happening now".
+    Each CSV value is rain in the 30 minutes ending at ``ended_at``.
     """
     first = nowcast.first_wet_slot
     if first is None:
@@ -196,49 +214,74 @@ def _draw_gauge(
     draw.rectangle((x0 + inset, fy0, x1 - inset, fy1), fill=0)
 
 
-def _draw_one_slot(
+def _forecast_geometry(layout: RainfallLayout) -> tuple[int, int, int]:
+    """Return (forecast_origin_x, forecast_slot_w, divider_x)."""
+    forecast_x = layout.x + layout.now_col_w + layout.divider_gap
+    forecast_w = layout.w - layout.now_col_w - layout.divider_gap
+    slot_w = (forecast_w - SLOT_GAP * (SLOT_COUNT - 1)) // SLOT_COUNT
+    divider_x = layout.x + layout.now_col_w + layout.divider_gap // 2
+    return forecast_x, slot_w, divider_x
+
+
+def _draw_cup_column(
     draw: ImageDraw.ImageDraw,
-    slot: NowcastSlot,
+    *,
     x: int,
     y: int,
+    col_w: int,
+    caption: str,
+    mm: float | None,
     layout: RainfallLayout,
 ):
-    cx = x + SLOT_W // 2
+    cx = x + col_w // 2
     time_font = font14 if layout.compact else font18
     label_font = font14 if layout.compact else font24
     draw.text(
         (cx, y + layout.slot_time_dy),
-        _slot_label(slot),
+        caption,
         font=time_font,
         fill=0,
         anchor="ms",
     )
-
-    level = _severity(slot.per_slot_mm)
-    _draw_gauge(draw, cx, y + layout.gauge_dy, _gauge_fill_ratio(slot.per_slot_mm), layout)
-
+    if mm is None:
+        _draw_gauge(draw, cx, y + layout.gauge_dy, 0.0, layout)
+        word = "無資料"
+    else:
+        _draw_gauge(draw, cx, y + layout.gauge_dy, _gauge_fill_ratio(mm), layout)
+        word = _severity_label(mm)
     draw.text(
         (cx, y + layout.label_dy),
-        _SEVERITY_LABEL[level],
+        word,
         font=label_font,
         fill=0,
         anchor="ms",
     )
 
 
-def _draw_header(draw: ImageDraw.ImageDraw, nowcast: HomeNowcast, layout: RainfallLayout):
-    """Action on the left, timing on the right, same baseline."""
+def _draw_divider(draw: ImageDraw.ImageDraw, layout: RainfallLayout, divider_x: int):
+    top = layout.y + layout.slots_dy + 8
+    bottom = layout.y + layout.h - 8
+    draw.line((divider_x, top, divider_x, bottom), fill=0, width=1)
+
+
+def _draw_header(
+    draw: ImageDraw.ImageDraw,
+    nowcast: HomeNowcast | None,
+    observed: HourlyRainfall | None,
+    layout: RainfallLayout,
+):
+    """Action on the left, observed/timing on the right, same baseline."""
     verdict_font = font32 if layout.compact else font40
     when_font = font14 if layout.compact else font18
     baseline = layout.y + layout.verdict_dy
     draw.text(
         (layout.x + 8, baseline),
-        _verdict_text(nowcast),
+        _verdict_text(nowcast, observed),
         font=verdict_font,
         fill=0,
         anchor="ls",
     )
-    when = _when_text(nowcast)
+    when = _when_text(nowcast, observed)
     if when:
         draw.text(
             (layout.x + layout.w - 8, baseline),
@@ -251,38 +294,71 @@ def _draw_header(draw: ImageDraw.ImageDraw, nowcast: HomeNowcast, layout: Rainfa
 
 def _draw_slots(
     draw: ImageDraw.ImageDraw,
-    nowcast: HomeNowcast,
+    nowcast: HomeNowcast | None,
+    observed: HourlyRainfall | None,
     layout: RainfallLayout,
 ):
     slots_y = layout.y + layout.slots_dy
+    forecast_x, slot_w, divider_x = _forecast_geometry(layout)
+
+    _draw_cup_column(
+        draw,
+        x=layout.x,
+        y=slots_y,
+        col_w=layout.now_col_w,
+        caption=NOW_CAPTION,
+        mm=None if observed is None else observed.mm,
+        layout=layout,
+    )
+    _draw_divider(draw, layout, divider_x)
+
+    if nowcast is None:
+        return
     for i, slot in enumerate(nowcast.slots[:SLOT_COUNT]):
-        x = layout.x + i * (SLOT_W + SLOT_GAP)
-        _draw_one_slot(draw, slot, x, slots_y, layout)
+        x = forecast_x + i * (slot_w + SLOT_GAP)
+        _draw_cup_column(
+            draw,
+            x=x,
+            y=slots_y,
+            col_w=slot_w,
+            caption=_slot_label(slot),
+            mm=slot.per_slot_mm,
+            layout=layout,
+        )
 
 
 def render_rainfall_section(
     image: Image.Image,
     nowcast: HomeNowcast | None,
     layout: RainfallLayout | None = None,
+    observed: HourlyRainfall | None = None,
 ):
-    """Draw the rainfall-nowcast panel onto ``image``.
+    """Draw observed past-hour rain plus the 2-hour nowcast onto ``image``.
 
-    If ``nowcast`` is ``None`` (network or parse failure), the section is
-    filled with a single "nowcast unavailable" line - blanking the
-    section is worse than admitting we don't have data.
+    The 現況 cup is drawn even when the nowcast fetch failed. A full-width
+    error line is used only when both sources are missing.
     """
     layout = layout or QUIET_RAINFALL
     draw = ImageDraw.Draw(image)
 
-    if nowcast is None:
+    if nowcast is None and (observed is None or not observed.available):
         draw.text(
             (layout.x + 8, layout.y + (28 if layout.compact else 44)),
-            "未來兩小時雨量預報 暫時無法取得",
+            "雨量資料 暫時無法取得",
             font=font32 if layout.compact else font40,
             fill=0,
             anchor="ls",
         )
         return
 
-    _draw_header(draw, nowcast, layout)
-    _draw_slots(draw, nowcast, layout)
+    _draw_header(draw, nowcast, observed, layout)
+    _draw_slots(draw, nowcast, observed, layout)
+    if nowcast is None:
+        forecast_x, _, _ = _forecast_geometry(layout)
+        draw.text(
+            (forecast_x + 8, layout.y + layout.slots_dy + layout.gauge_dy + 16),
+            "兩小時預報無法取得",
+            font=font14 if layout.compact else font18,
+            fill=0,
+            anchor="ls",
+        )
