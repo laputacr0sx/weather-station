@@ -56,19 +56,29 @@ def _humidity():
 
 
 def _forecast():
-    icons = [50, 60, 70, 80, 90]
-    weeks = ["一(一)", "二(二)", "三(三)", "四(四)", "五(五)"]
+    icons = [50, 60, 70, 80, 90, 51, 62, 63, 65]
+    weeks = [
+        "星期一",
+        "星期二",
+        "星期三",
+        "星期四",
+        "星期五",
+        "星期六",
+        "星期日",
+        "星期一",
+        "星期二",
+    ]
     return SimpleNamespace(
         weather_forecast=[
             SimpleNamespace(
-                forecast_maxtemp=SimpleNamespace(value=31.0),
-                forecast_mintemp=SimpleNamespace(value=26.0),
+                forecast_maxtemp=SimpleNamespace(value=31.0 - (i % 3)),
+                forecast_mintemp=SimpleNamespace(value=26.0 - (i % 2)),
                 forecast_maxrh=SimpleNamespace(value=90.0),
                 forecast_minrh=SimpleNamespace(value=70.0),
                 forecast_icon=icons[i],
                 week=weeks[i],
             )
-            for i in range(5)
+            for i in range(9)
         ]
     )
 

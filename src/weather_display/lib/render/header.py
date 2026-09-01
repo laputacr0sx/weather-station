@@ -44,12 +44,14 @@ def dates(location: str, now: str, gregorian: GregorianDate, draw: ImageDraw.Ima
 
 
 def major_weather(weather, humidity, image, draw: ImageDraw.ImageDraw):
+    # 156px leaves the column to the right for a 9-day forecast row.
+    # 220px ate that band and capped the forecast at five days.
     icon = Image.open(os.path.join(PIC_DIR, f'{weather.icon[0]}.png'))
-    image.paste(icon.resize((220, 220)), (8, 0))
+    image.paste(icon.resize((156, 156)), (8, 0))
 
     temp_text = f'{weather.temperature.data[0].value:.0f}'
-    draw_celsius(draw, 236, 78, temp_text, font80, font24, font48)
-    draw_run(draw, 236, 126, [(f'{humidity.humidity}', font40), ('%', font32)])
+    draw_celsius(draw, 172, 78, temp_text, font80, font24, font48)
+    draw_run(draw, 172, 126, [(f'{humidity.humidity}', font40), ('%', font32)])
 
 
 def inhouse_weather(env: EnvironmentData, draw: ImageDraw.ImageDraw):
