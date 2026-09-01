@@ -93,17 +93,19 @@ def _env():
 
 
 def _nowcast_wet():
-    """Two wet slots: light rain in slot 1, steady in slot 2.
+    """Four-step gauge: dry, light, heavy, steady.
 
     Slot end times are relative to now so the time-to-rain line is a
     future estimate rather than "raining now" from stale fixture hours.
     """
     base = datetime.now().replace(second=0, microsecond=0)
     ends = [base + timedelta(minutes=30 * (i + 1)) for i in range(4)]
-    cumulatives = [0.0, 1.5, 8.0, 8.5]
-    per_slot = [cumulatives[0]] + [
-        cumulatives[i] - cumulatives[i - 1] for i in range(1, 4)
-    ]
+    per_slot = [0.0, 1.5, 12.0, 4.0]
+    cumulatives = []
+    running = 0.0
+    for v in per_slot:
+        running += v
+        cumulatives.append(running)
     slots = [
         NowcastSlot(
             ended_at=ends[i],
