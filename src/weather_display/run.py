@@ -11,7 +11,8 @@ from weather_display.lib.render.dashboard import render_minor_dashboard
 from weather_display.lib.render.footer import render_footer_section
 from weather_display.lib.render.forecast import render_forecast_section
 from weather_display.lib.render.header import render_header_section
-from weather_display.lib.render.rainfall import render_rainfall_section
+from weather_display.lib.render.rainfall import COMPACT_RAINFALL, render_rainfall_section
+from weather_display.lib.render.warnings import render_warning_strip
 from weather_display.lib.util.calculate_time import get_record_time_diff
 from weather_display.lib.util.convert_date_string import get_now_str
 from weather_display.lib.util.current_weather import get_current_weather
@@ -19,9 +20,11 @@ from weather_display.lib.util.display_backend import present
 from weather_display.lib.util.env_sensor import EnvironmentData
 from weather_display.lib.util.gregorian import get_gregorian_date
 from weather_display.lib.util.humidity import get_humidity_data
+from weather_display.lib.util.hourly_rainfall import get_home_hourly_rainfall
 from weather_display.lib.util.rainfall_nowcast import get_home_nowcast
 from weather_display.lib.util.sun import get_sun_status
 from weather_display.lib.util.uv_index import get_uv_data
+from weather_display.lib.util.warnings import get_warning_strip
 from weather_display.lib.util.weather_forecast import get_weather_forecast
 from weather_display.lib.util.wind import get_wind_data
 
@@ -84,6 +87,26 @@ def main(argv=None):
         else:
             logging.info('Home nowcast GOT! peak=%.2fmm/30min' % nowcast.peak_per_slot_mm)
 
+        observed = get_home_hourly_rainfall()
+        if observed.mm is None:
+            logging.warning('Sha Tin hourly rainfall unavailable')
+        else:
+            logging.info(
+                'Sha Tin hourly rain GOT! %.1fmm at %s',
+                observed.mm,
+                observed.obs_time,
+            )
+
+        warning_strip = get_warning_strip()
+        if warning_strip.active:
+            logging.info(
+                'Warnings GOT! chips=%s tip=%s',
+                ','.join(c.code for c in warning_strip.chips) or '-',
+                warning_strip.tip or '-',
+            )
+        else:
+            logging.info('No in-force warnings')
+
         location = '沙田馬鞍山'
         now_str = get_now_str(now)
 
@@ -98,7 +121,12 @@ def main(argv=None):
             greg, weather, humidity, location, now_str, draw, main_image, env
         )
         render_forecast_section(forecast, draw, main_image)
-        render_rainfall_section(main_image, nowcast)
+        rainfall_layout = None
+        if render_warning_strip(main_image, warning_strip):
+            rainfall_layout = COMPACT_RAINFALL
+        render_rainfall_section(
+            main_image, nowcast, rainfall_layout, observed=observed
+        )
         render_minor_dashboard(wind, uv, sun, draw, main_image)
         render_footer_section(draw, time_diff, now)
 

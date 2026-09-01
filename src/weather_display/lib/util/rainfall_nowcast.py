@@ -1,8 +1,9 @@
 """Half-hourly rainfall nowcast for a single home location.
 
 Fetches the HKO gridded nowcast CSV (https://data.weather.gov.hk/weatherAPI/hko_data/F3/Gridded_rainfall_nowcast.csv),
-picks the grid cell nearest to HOME_LAT/HOME_LON, and returns the 4 cumulative
-slot values plus per-slot amounts (differenced) and the slot end times.
+picks the grid cell nearest to HOME_LAT/HOME_LON, and returns the four
+half-hour amounts. The CSV column is rain in that 30-min window, not a
+running total (values rise and fall). ``cumulative_mm`` is summed here.
 
 Returns ``None`` only when the network or the CSV is unavailable. An
 all-zero forecast is still returned as a valid result - it means "no rain
@@ -39,9 +40,9 @@ _COL_RAIN = "Half-hourly Nowcast Accumulated Rainfall (mm)"
 class NowcastSlot:
     """A single half-hour forecast slot.
 
-    ``cumulative_mm`` is total rainfall since the nowcast base time, ending
-    at ``ended_at``. ``per_slot_mm`` is the rainfall within this 30-min
-    window alone (cumulative differenced).
+    ``per_slot_mm`` is rain in the 30 min ending at ``ended_at`` (the CSV
+    value). ``cumulative_mm`` is the running sum of those windows from the
+    nowcast base time.
     """
 
     ended_at: datetime
@@ -142,17 +143,19 @@ def get_home_nowcast() -> Optional[HomeNowcast]:
             return None
 
         slots: List[NowcastSlot] = []
-        prev = 0.0
+        running = 0.0
         for row in cell:
-            cum = float(row["rainfall"])
+            # Column name says "accumulated" but it is rain in that half
+            # hour. Differencing a non-monotonic series invents negatives.
+            per_slot = max(0.0, float(row["rainfall"]))
+            running = round(running + per_slot, 3)
             slots.append(
                 NowcastSlot(
                     ended_at=row["endedAt"],
-                    cumulative_mm=cum,
-                    per_slot_mm=cum - prev,
+                    cumulative_mm=running,
+                    per_slot_mm=per_slot,
                 )
             )
-            prev = cum
 
         return HomeNowcast(
             base_at=cell[0]["updatedAt"],
