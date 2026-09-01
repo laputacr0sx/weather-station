@@ -1,9 +1,10 @@
 """Tests for the rainfall_nowcast data layer.
 
-These pin down the data-shaping rules: cumulative values are differenced
-into per-slot amounts, the wet-slot finding logic returns the first slot
-with non-zero per-slot rain, and ``None`` propagates when the CSV fetch
-fails. The CSV itself is mocked so these tests do not hit the network.
+These pin down the data-shaping rules: each CSV value is rain in that
+30-min window (not a running total), the wet-slot finding logic returns
+the first slot with non-zero per-slot rain, and ``None`` propagates when
+the CSV fetch fails. The CSV itself is mocked so these tests do not hit
+the network.
 """
 from __future__ import annotations
 
@@ -116,19 +117,25 @@ def test_nearest_node_picks_closest_cell_slot_major_csv():
     assert (lat, lon) == (22.43, 114.221)
 
 
-def test_get_home_nowcast_differences_cumulative_to_per_slot():
-    """End-to-end: cumulative 0, 2, 5, 5 -> per-slot 0, 2, 3, 0."""
-    csv_text = _make_csv({(22.43, 114.221): [0.0, 2.0, 5.0, 5.0]})
+def test_get_home_nowcast_treats_csv_values_as_per_slot():
+    """HKO 'half-hourly accumulated' is rain in that 30 min, not a running total.
+
+    Live cells rise and fall (e.g. 2.63, 3.99, 8.52, 3.67). Differencing
+    those would invent a negative last slot and under-state the peak.
+    """
+    csv_text = _make_csv({(22.43, 114.221): [2.63, 3.99, 8.52, 3.67]})
     with patch(
         "weather_display.lib.util.rainfall_nowcast.requests.get",
         return_value=_fake_response(csv_text),
     ):
         nowcast = get_home_nowcast()
     assert isinstance(nowcast, HomeNowcast)
-    cumulatives = [s.cumulative_mm for s in nowcast.slots]
     per_slot = [s.per_slot_mm for s in nowcast.slots]
-    assert cumulatives == [0.0, 2.0, 5.0, 5.0]
-    assert per_slot == [0.0, 2.0, 3.0, 0.0]
+    cumulatives = [s.cumulative_mm for s in nowcast.slots]
+    assert per_slot == [2.63, 3.99, 8.52, 3.67]
+    assert cumulatives == [2.63, 6.62, 15.14, 18.81]
+    assert nowcast.peak_per_slot_mm == 8.52
+    assert nowcast.total_mm == 18.81
 
 
 def test_first_wet_slot_finds_earliest_rain():
