@@ -168,15 +168,6 @@ def _draw_one_slot(
     )
 
 
-def _draw_section_frame(draw: ImageDraw.ImageDraw, layout: RainfallLayout):
-    """Light bounding rectangle around the rainfall panel."""
-    draw.rectangle(
-        (layout.x, layout.y, layout.x + layout.w, layout.y + layout.h),
-        outline=0,
-        width=1,
-    )
-
-
 def _draw_verdict(
     draw: ImageDraw.ImageDraw, nowcast: HomeNowcast, layout: RainfallLayout
 ):
@@ -234,7 +225,6 @@ def render_rainfall_section(
     """
     layout = layout or QUIET_RAINFALL
     draw = ImageDraw.Draw(image)
-    _draw_section_frame(draw, layout)
 
     if nowcast is None:
         draw.text(
