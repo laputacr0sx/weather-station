@@ -1,11 +1,13 @@
 [Unit]
-Description=Refresh weather display (15 min by day, hourly overnight)
+Description=Fetch the dashboard image (2 min after each Lifebook check)
 
 [Timer]
-# 05:00-23:45 every 15 minutes (hours 5-23, minutes 0/15/30/45)
-OnCalendar=*-*-* 05..23:00/15:00
-# 00:00-04:00 once an hour
-OnCalendar=*-*-* 00..04:00:00
+# Two minutes after the Lifebook publisher, so the PNG is already written.
+OnCalendar=*-*-* 05..23:02:00
+OnCalendar=*-*-* 05..23:17:00
+OnCalendar=*-*-* 05..23:32:00
+OnCalendar=*-*-* 05..23:47:00
+OnCalendar=*-*-* 00..04:02:00
 # Run once after boot if a tick was missed while the Pi was off
 Persistent=true
 AccuracySec=1min

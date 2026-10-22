@@ -1,0 +1,18 @@
+[Unit]
+Description=Render the dashboard pages for the panel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=__REPO__
+Environment=PYTHONPATH=__REPO__/src
+EnvironmentFile=-__REPO__/.env
+RuntimeDirectory=weather-display
+StateDirectory=weather-display
+ExecStart=/usr/bin/flock -n /run/weather-display/lock __PYTHON__ -m weather_display.publish
+TimeoutStartSec=180
+Nice=10
+StandardOutput=journal
+StandardError=journal

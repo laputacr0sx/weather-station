@@ -8,4 +8,5 @@ venv/
 *.log
 error.log
 tests/output/
+var/
 .claude/

@@ -1,5 +1,5 @@
 [Unit]
-Description=Weather station e-paper refresh
+Description=Fetch the dashboard image and refresh the e-paper
 After=network-online.target
 Wants=network-online.target
 
@@ -8,8 +8,10 @@ Type=oneshot
 User=__USER__
 WorkingDirectory=__REPO__
 Environment=PYTHONPATH=__REPO__/src
+EnvironmentFile=-__REPO__/.env
 RuntimeDirectory=weather-display
-ExecStart=/usr/bin/flock -n /run/weather-display/lock __PYTHON__ -m weather_display.run
+StateDirectory=weather-display
+ExecStart=/usr/bin/flock -n /run/weather-display/lock __PYTHON__ -m weather_display.panel
 TimeoutStartSec=180
 Nice=10
 StandardOutput=journal

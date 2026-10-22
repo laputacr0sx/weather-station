@@ -1,0 +1,20 @@
+[Unit]
+Description=Serve the latest dashboard image
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__REPO__
+Environment=PYTHONPATH=__REPO__/src
+EnvironmentFile=-__REPO__/.env
+StateDirectory=weather-display
+ExecStart=__PYTHON__ -m weather_display.serve
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -44,6 +44,18 @@ fi
 SITE=$("$PYTHON" -c "import site; print(site.getsitepackages()[0])")
 echo "$REPO/src" > "$SITE/weather-station.pth"
 
+install_unit() {
+  local src=$1 dest=$2
+  local unit
+  unit=$(mktemp)
+  sed -e "s|__USER__|$INSTALL_USER|g" \
+      -e "s|__REPO__|$REPO|g" \
+      -e "s|__PYTHON__|$PYTHON|g" \
+      "$src" > "$unit"
+  sudo cp "$unit" "/etc/systemd/system/$dest"
+  rm -f "$unit"
+}
+
 if is_pi; then
   if [ ! -e /dev/spidev0.0 ] && command -v raspi-config >/dev/null; then
     sudo raspi-config nonint do_spi 0 || true
@@ -51,18 +63,22 @@ if is_pi; then
   fi
   sudo usermod -aG spi,gpio "$INSTALL_USER" 2>/dev/null || true
 
-  UNIT=$(mktemp)
-  sed -e "s|__USER__|$INSTALL_USER|g" \
-      -e "s|__REPO__|$REPO|g" \
-      -e "s|__PYTHON__|$PYTHON|g" \
-      "$REPO/deploy/systemd/weather-display.service.in" > "$UNIT"
-  sudo cp "$UNIT" /etc/systemd/system/weather-display.service
+  install_unit "$REPO/deploy/systemd/weather-display.service.in" weather-display.service
   sudo cp "$REPO/deploy/systemd/weather-display.timer" /etc/systemd/system/weather-display.timer
-  rm -f "$UNIT"
   sudo systemctl daemon-reload
   sudo systemctl enable --now weather-display.timer
   sudo systemctl start weather-display.service || true
-  echo "Timer on. Logs: journalctl -u weather-display.service -n 50"
+  echo "Panel timer on. It downloads the Lifebook image and refreshes the glass."
+  echo "Logs: journalctl -u weather-display.service -n 50"
+elif [ -d /run/systemd/system ] && command -v systemctl >/dev/null; then
+  install_unit "$REPO/deploy/systemd/weather-publish.service.in" weather-publish.service
+  install_unit "$REPO/deploy/systemd/weather-serve.service.in" weather-serve.service
+  sudo cp "$REPO/deploy/systemd/weather-publish.timer" /etc/systemd/system/weather-publish.timer
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now weather-serve.service weather-publish.timer
+  sudo systemctl start weather-publish.service || true
+  echo "Publisher and image server on. The Pi fetches http://192.168.1.54:8765/current.png"
+  echo "Logs: journalctl -u weather-publish.service -u weather-serve.service -n 50"
 else
   echo "Not a Raspberry Pi — venv is ready. Preview: $PYTHON -m weather_display.run"
 fi
