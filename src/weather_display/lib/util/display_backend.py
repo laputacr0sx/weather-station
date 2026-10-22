@@ -1,6 +1,7 @@
 """Choose e-paper vs desktop preview without importing Waveshare on a laptop.
 
-Default is auto: Raspberry Pi (any model, including Zero 2 W) uses the EPD;
+The panel is the Waveshare 7.3-inch E6 (E Ink Spectra 6), 800×480, six colors.
+Default is auto: a Raspberry Pi (any model, including Zero 2 W) uses the EPD;
 everything else calls ``Image.show()``. Override with ``WEATHER_DISPLAY_OUTPUT``:
 
 * ``auto`` (default) — detect from the device tree / cpuinfo
@@ -63,12 +64,13 @@ def present(image: Image.Image) -> None:
 
 
 def _present_epd(image: Image.Image) -> None:
-    # Imported only on the Pi so Windows/dev never loads spidev/gpiozero.
-    from weather_display.lib.waveshare_epd import epd7in5_V2
+    # Imported only on the Pi so a laptop never loads spidev/gpiozero.
+    from weather_display.lib.render.palette import frame_buffer
+    from weather_display.lib.waveshare_epd import epd7in3e
 
-    epd = epd7in5_V2.EPD()
+    epd = epd7in3e.EPD()
     epd.init()
     try:
-        epd.display(epd.getbuffer(image))
+        epd.display(frame_buffer(image))
     finally:
         epd.sleep()
